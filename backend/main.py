@@ -10,6 +10,11 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+<<<<<<< feature/auth-ui
+from fastapi.middleware.cors import CORSMiddleware
+
+=======
+>>>>>>> main
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
