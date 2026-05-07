@@ -1,16 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from app.database import SessionLocal, engine, Base
-import app.models as models
-import app.schemas as schemas
-import app.auth as auth
+from backend.app.database import SessionLocal, engine, Base
+import backend.app.models as models
+import backend.app.schemas as schemas
+import backend.app.auth as auth
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+<<<<<<< feature/auth-ui
 from fastapi.middleware.cors import CORSMiddleware
 
+=======
+>>>>>>> main
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -93,3 +97,11 @@ def get_me(user: models.User = Depends(get_current_user)):
         "email": user.email,
         "role": user.role
     }
+
+@app.post("/grievances", response_model=schemas.GrievanceOut)
+def create_grievance(grievance: schemas.GrievanceCreate, db: Session = Depends(get_db)):
+    new_grievance = models.Grievance(**grievance.model_dump())
+    db.add(new_grievance)
+    db.commit()
+    db.refresh(new_grievance)
+    return new_grievance
