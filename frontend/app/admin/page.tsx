@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
+import useAuth from "@/hooks/useAuth";
 
 type Grievance = {
   id: number;
