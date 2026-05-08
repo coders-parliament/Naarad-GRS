@@ -105,3 +105,15 @@ graph TD
 ```
 
 ## 👥 Team: Ascendrix
+
+
+## Utility: close already-completed GitHub issues
+
+If your tracker has open issues that are already done, you can close them in bulk:
+
+```bash
+python scripts/close_done_issues.py --repo <owner>/<repo> --dry-run
+python scripts/close_done_issues.py --repo <owner>/<repo>
+```
+
+Set `GITHUB_TOKEN` (with `repo` scope) before running. The script closes open issues that have labels such as `done`, `completed`, `resolved`, or `executed`, and can be safely tested first with `--dry-run`.

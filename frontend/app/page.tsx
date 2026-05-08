@@ -18,17 +18,19 @@ export default function Home() {
   <div className="flex gap-4">
 
     {/* Admin Button */}
-    <Link href="/admin">
-      <button className="text-white hover:text-indigo-400 transition">
-        Admin
-      </button>
+    <Link
+      href="/admin"
+      className="text-white hover:text-indigo-400 transition"
+    >
+      Admin
     </Link>
 
     {/* Submit Button */}
-    <Link href="/submit">
-      <button className="bg-indigo-600 px-5 py-2 rounded-xl hover:bg-indigo-700 transition">
-        Submit Grievance
-      </button>
+    <Link
+      href="/submit"
+      className="bg-indigo-600 px-5 py-2 rounded-xl hover:bg-indigo-700 transition"
+    >
+      Submit Grievance
     </Link>
 
   </div>
@@ -52,10 +54,11 @@ export default function Home() {
           intelligent AI prioritization.
         </p>
 
-        <Link href="/submit">
-          <button className="bg-orange-500 px-8 py-3 rounded-xl text-lg hover:bg-orange-600 transition shadow-lg hover:scale-105">
-            Submit Complaint
-          </button>
+        <Link
+          href="/submit"
+          className="bg-orange-500 px-8 py-3 rounded-xl text-lg hover:bg-orange-600 transition shadow-lg hover:scale-105 inline-block"
+        >
+          Submit Complaint
         </Link>
       </section>
 
@@ -104,10 +107,11 @@ export default function Home() {
           Transparent. Fast. AI-driven.
         </p>
 
-        <Link href="/submit">
-          <button className="bg-indigo-600 px-8 py-3 rounded-xl hover:bg-indigo-700 transition hover:scale-105">
-            Get Started
-          </button>
+        <Link
+          href="/submit"
+          className="bg-indigo-600 px-8 py-3 rounded-xl hover:bg-indigo-700 transition hover:scale-105 inline-block"
+        >
+          Get Started
         </Link>
       </section>
 

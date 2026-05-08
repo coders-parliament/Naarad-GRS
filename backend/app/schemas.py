@@ -15,3 +15,17 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class GrievanceCreate(BaseModel):
+    name: str
+    email: str
+    category: str
+    title: str
+    description: str
+
+
+class GrievanceOut(GrievanceCreate):
+    id: int
+
+    class Config:
+        from_attributes = True
