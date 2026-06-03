@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -19,6 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo", required=True, help="GitHub repo in owner/name format")
     parser.add_argument("--token", default=os.getenv("GITHUB_TOKEN"), help="GitHub token (or set GITHUB_TOKEN)")
     parser.add_argument("--dry-run", action="store_true", help="Print issues that would be closed")
+    parser.add_argument("--done-labels", help="Comma-separated list of labels indicating issue is done")
+    parser.add_argument("--done-keywords", help="Comma-separated list of title keywords indicating issue is done")
     return parser.parse_args()
 
 
@@ -31,8 +34,17 @@ def should_close(issue: dict, done_labels: set[str], done_keywords: set[str]) ->
     if labels.intersection(done_labels):
         return True
 
-    title = issue.get("title", "").lower()
-    return any(keyword in title for keyword in done_keywords)
+    title = issue.get("title", "")
+    if not title:
+        return False
+    
+    title_lower = title.lower()
+    for keyword in done_keywords:
+        pattern = rf"\b{re.escape(keyword.lower())}\b"
+        if re.search(pattern, title_lower):
+            return True
+
+    return False
 
 
 def request_json(method: str, url: str, token: str, data: dict | None = None):
@@ -91,8 +103,16 @@ def main() -> int:
         print("error: GitHub token missing. Use --token or set GITHUB_TOKEN.", file=sys.stderr)
         return 2
 
+    done_labels = DEFAULT_DONE_LABELS
+    if args.done_labels:
+        done_labels = normalize(args.done_labels.split(","))
+
+    done_keywords = DEFAULT_DONE_KEYWORDS
+    if args.done_keywords:
+        done_keywords = normalize(args.done_keywords.split(","))
+
     issues = fetch_open_issues(args.repo, args.token)
-    closable = [i for i in issues if should_close(i, DEFAULT_DONE_LABELS, DEFAULT_DONE_KEYWORDS)]
+    closable = [i for i in issues if should_close(i, done_labels, done_keywords)]
 
     print(f"Open issues: {len(issues)}")
     print(f"Closable issues: {len(closable)}")

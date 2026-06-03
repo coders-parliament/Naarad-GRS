@@ -66,20 +66,31 @@ def test_all():
         print("Wrong password caught correctly:", e.detail)
         assert e.status_code == 401
         
-    print("\n--- 4. Testing Grievance Submission ---")
-    # Anonymous submission
+    print("\n--- 4. Testing Grievance Submission & Uploads ---")
+    # Test Upload Endpoint
+    from fastapi import UploadFile
+    import io
+    dummy_file = UploadFile(filename="test_image.png", file=io.BytesIO(b"dummy image data"))
+    upload_res = main.upload_file(dummy_file)
+    print("Upload response:", upload_res)
+    assert "url" in upload_res
+    assert upload_res["url"].endswith(".png")
+
+    # Anonymous submission with attachment
     anon_grievance = schemas.GrievanceCreate(
         title="Main water pipe burst",
         description="A major water line has burst on main road, causing flooding.",
         category="Water",
         name="John Doe",
-        email="john@example.com"
+        email="john@example.com",
+        attachment_url=upload_res["url"]
     )
     g1 = main.create_grievance(anon_grievance, authorization=None, db=db)
-    print("Anon grievance created:", g1.id, g1.title, g1.category, g1.priority, g1.status)
+    print("Anon grievance created with attachment:", g1.id, g1.title, g1.category, g1.priority, g1.status, "attachment:", g1.attachment_url)
     assert g1.user_id is None
     assert g1.category == "Water"
     assert g1.priority == "High"
+    assert g1.attachment_url == upload_res["url"]
     
     # Authenticated submission
     token = login_res["access_token"]

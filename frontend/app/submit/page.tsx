@@ -18,6 +18,7 @@ export default function SubmitPage() {
     description: "",
   });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submittedGrievance, setSubmittedGrievance] = useState<any>(null);
@@ -68,6 +69,32 @@ export default function SubmitPage() {
     setLoading(true);
     setError("");
 
+    // Step 1: Upload file if exists
+    let attachment_url = null;
+    if (selectedFile) {
+      try {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        const uploadRes = await fetch("http://127.0.0.1:8000/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload attachment");
+        }
+
+        const uploadData = await uploadRes.json();
+        attachment_url = uploadData.url;
+      } catch (err: any) {
+        setError(err.message || "Failed to upload file attachment");
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Step 2: Submit grievance
     const token = localStorage.getItem("token");
     const headers: Record<string, string> = {
       "Content-Type": "application/json"
@@ -85,7 +112,8 @@ export default function SubmitPage() {
           description: form.description,
           category: form.category || "Other",
           name: form.name || null,
-          email: form.email || null
+          email: form.email || null,
+          attachment_url: attachment_url
         })
       });
 
@@ -143,12 +171,26 @@ export default function SubmitPage() {
                 </span>
               </p>
               <p><strong className="text-text-secondary">Status:</strong> <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">{submittedGrievance?.status}</span></p>
+              {submittedGrievance?.attachment_url && (
+                <p>
+                  <strong className="text-text-secondary">Attachment:</strong>{" "}
+                  <a 
+                    href={submittedGrievance.attachment_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-accent-primary hover:underline font-semibold"
+                  >
+                    View Attached File ↗
+                  </a>
+                </p>
+              )}
               <p><strong className="text-text-secondary">Description:</strong> {submittedGrievance?.description}</p>
             </div>
             
             <button 
               onClick={() => {
                 setForm({ name: "", email: "", category: "", title: "", description: "" });
+                setSelectedFile(null);
                 setSubmitted(false);
               }}
               className="mt-6 bg-accent-primary px-6 py-2.5 rounded-lg hover:bg-accent-hover transition cursor-pointer text-white font-semibold shadow-lg shadow-accent-primary/10"
@@ -240,6 +282,13 @@ export default function SubmitPage() {
               </label>
               <input
                 type="file"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setSelectedFile(e.target.files[0]);
+                  } else {
+                    setSelectedFile(null);
+                  }
+                }}
                 className="w-full text-text-secondary file:bg-accent-primary file:text-white file:border-0 file:px-4 file:py-2 file:rounded-lg hover:file:bg-accent-hover transition cursor-pointer"
               />
             </div>
