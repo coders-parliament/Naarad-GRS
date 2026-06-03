@@ -10,11 +10,6 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-<<<<<<< feature/auth-ui
-from fastapi.middleware.cors import CORSMiddleware
-
-=======
->>>>>>> main
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -89,6 +84,14 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
 
     return user
 
+# ROLE CHECKER DEPENDENCY
+def require_role(required_role: str):
+    def dependency(current_user: models.User = Depends(get_current_user)):
+        if current_user.role != required_role:
+            raise HTTPException(status_code=403, detail="Forbidden: Insufficient permissions")
+        return current_user
+    return dependency
+
 # PROTECTED ROUTE
 @app.get("/me")
 def get_me(user: models.User = Depends(get_current_user)):
@@ -98,10 +101,98 @@ def get_me(user: models.User = Depends(get_current_user)):
         "role": user.role
     }
 
-@app.post("/grievances", response_model=schemas.GrievanceOut)
-def create_grievance(grievance: schemas.GrievanceCreate, db: Session = Depends(get_db)):
-    new_grievance = models.Grievance(**grievance.model_dump())
+# CREATE GRIEVANCE
+@app.post("/grievance", response_model=schemas.GrievanceOut)
+def create_grievance(
+    grievance: schemas.GrievanceCreate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    user_id = None
+    if authorization:
+        try:
+            if authorization.startswith("Bearer "):
+                token = authorization.split(" ")[1]
+                payload = auth.decode_token(token)
+                if payload:
+                    user = db.query(models.User).filter(models.User.email == payload["sub"]).first()
+                    if user:
+                        user_id = user.id
+        except Exception:
+            pass
+
+    # Process with AI
+    from backend.app.ai import analyze_grievance
+    ai_results = analyze_grievance(grievance.title, grievance.description)
+
+    # Use selected category if it's not "Other" or empty, otherwise fallback to AI predicted category
+    category = grievance.category
+    if not category or category in ["Other", "Select category", "Select Category"]:
+        category = ai_results.get("category", "Other")
+
+    new_grievance = models.Grievance(
+        title=grievance.title,
+        description=grievance.description,
+        category=category,
+        priority=ai_results.get("priority", "Medium"),
+        status="Pending",
+        name=grievance.name,
+        email=grievance.email,
+        user_id=user_id
+    )
+
     db.add(new_grievance)
     db.commit()
     db.refresh(new_grievance)
     return new_grievance
+
+# GET ALL GRIEVANCES (ADMIN ONLY)
+@app.get("/grievances", response_model=list[schemas.GrievanceOut])
+def get_grievances(
+    admin_user: models.User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    return db.query(models.Grievance).all()
+
+# GET USER GRIEVANCES
+@app.get("/my-grievances", response_model=list[schemas.GrievanceOut])
+def get_my_grievances(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(models.Grievance).filter(models.Grievance.user_id == current_user.id).all()
+
+# UPDATE GRIEVANCE
+@app.put("/grievance/{id}", response_model=schemas.GrievanceOut)
+def update_grievance(
+    id: int,
+    grievance_update: schemas.GrievanceUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    grievance = db.query(models.Grievance).filter(models.Grievance.id == id).first()
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+
+    # Check permission: admin, or owner of grievance
+    if current_user.role != "admin" and grievance.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: Access denied to update this grievance")
+
+    # Update fields
+    update_data = grievance_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(grievance, key, value)
+
+    db.commit()
+    db.refresh(grievance)
+    return grievance
+
+# ANALYZE TEXT WITH AI (DIAGNOSTIC/DIRECT API)
+@app.post("/ai/analyze")
+def analyze_text(payload: dict):
+    title = payload.get("title", "")
+    description = payload.get("description", "")
+    if not title and not description:
+        raise HTTPException(status_code=400, detail="Title or description is required")
+    from backend.app.ai import analyze_grievance
+    return analyze_grievance(title, description)

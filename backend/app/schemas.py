@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
 
 class UserCreate(BaseModel):
     email: str
@@ -17,15 +19,30 @@ class UserOut(BaseModel):
         from_attributes = True
 
 class GrievanceCreate(BaseModel):
-    name: str
-    email: str
-    category: str
     title: str
     description: str
+    category: Optional[str] = "Other"
+    name: Optional[str] = None
+    email: Optional[str] = None
 
+class GrievanceUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None
 
-class GrievanceOut(GrievanceCreate):
+class GrievanceOut(BaseModel):
     id: int
+    title: str
+    description: str
+    category: str
+    priority: str
+    status: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    user_id: Optional[int] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True

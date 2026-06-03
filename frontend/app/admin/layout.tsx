@@ -1,30 +1,26 @@
-import "./globals.css";
 import Navbar from "@/components/Navbar";
 
 export const metadata = {
-  title: "Naarad GRS",
-  description: "AI-powered grievance redressal system",
+  title: "Admin Dashboard | Naarad GRS",
+  description: "Admin panel for grievance management",
 };
 
-export default function RootLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
 
-      <body className="min-h-screen bg-[#0B1120] text-white">
+    <div className="min-h-screen bg-[#0B1120] text-white">
 
-        {/* Temporary placeholder role */}
-        <Navbar role="guest" />
+      <Navbar role="admin" />
 
-        <main className="max-w-7xl mx-auto px-6 py-8">
-          {children}
-        </main>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {children}
+      </main>
 
-      </body>
+    </div>
 
-    </html>
   );
 }

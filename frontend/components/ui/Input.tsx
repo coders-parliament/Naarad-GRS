@@ -1,10 +1,8 @@
-import { ChangeEventHandler } from "react";
-
 type InputProps = {
   label: string;
   name: string;
   value: string;
-  onChange: ChangeEventHandler<HTMLInputElement>;
+  onChange: any;
   placeholder?: string;
 };
 

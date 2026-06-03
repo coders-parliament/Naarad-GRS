@@ -1,11 +1,13 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { useState } from "react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Toast from "@/components/ui/Toast";
 
 const categories = ["Electricity", "Water", "Road", "Other"];
+
+import { useEffect } from "react";
 
 export default function SubmitPage() {
   const [form, setForm] = useState({
@@ -18,9 +20,35 @@ export default function SubmitPage() {
 
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedGrievance, setSubmittedGrievance] = useState<any>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch("http://127.0.0.1:8000/me", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (res.ok) return res.json();
+      })
+      .then(data => {
+        if (data) {
+          setForm(prev => ({
+            ...prev,
+            email: data.email || "",
+            name: data.email.split("@")[0] || ""
+          }));
+        }
+      })
+      .catch(err => console.error("Failed to load user profile", err));
+    }
+  }, []);
+
+  const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -29,34 +57,49 @@ export default function SubmitPage() {
     setOpen(false);
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    if (!form.name || !form.email || !form.category || !form.title || !form.description) {
-      setError("Please fill all required fields");
+    if (!form.title || !form.description) {
+      setError("Please enter a Title and Description for your grievance");
       return;
     }
 
+    setLoading(true);
     setError("");
 
+    const token = localStorage.getItem("token");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const response = await fetch(`${apiBase}/grievances`, {
+      const res = await fetch("http://127.0.0.1:8000/grievance", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
+        headers,
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          category: form.category || "Other",
+          name: form.name || null,
+          email: form.email || null
+        })
       });
 
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || "Failed to submit grievance");
+      const data = await res.json();
+      if (res.ok) {
+        setSubmittedGrievance(data);
+        setSubmitted(true);
+      } else {
+        setError(data.detail || "Failed to submit grievance");
       }
-
-      setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to submit grievance");
+      setError("Failed to connect to backend server");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,13 +118,43 @@ export default function SubmitPage() {
         </h1>
 
         {submitted ? (
-          <div className="text-center">
-            <h2 className="text-2xl text-green-400 font-semibold mb-4">
-              ✅ Grievance Submitted!
+          <div className="text-center space-y-6">
+            <h2 className="text-3xl text-green-400 font-semibold mb-4">
+              ✅ Grievance Submitted Successfully!
             </h2>
-            <p className="text-gray-400">
-              Your complaint has been recorded successfully.
+            <p className="text-gray-300">
+              Your complaint has been recorded. You can track its progress on your dashboard or via the ID below:
             </p>
+            
+            <div className="bg-white/10 p-6 rounded-xl border border-white/10 text-left space-y-4 max-w-xl mx-auto">
+              <p><strong className="text-gray-400">Tracking ID:</strong> <span className="text-indigo-400 font-mono text-lg font-bold">#{submittedGrievance?.id}</span></p>
+              <p><strong className="text-gray-400">Title:</strong> {submittedGrievance?.title}</p>
+              <p><strong className="text-gray-400">Category:</strong> <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-sm font-semibold">{submittedGrievance?.category}</span></p>
+              <p>
+                <strong className="text-gray-400">Priority (AI Detected):</strong>{" "}
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  submittedGrievance?.priority === "High" 
+                    ? "bg-red-500/20 text-red-400" 
+                    : submittedGrievance?.priority === "Low" 
+                    ? "bg-blue-500/20 text-blue-400" 
+                    : "bg-yellow-500/20 text-yellow-400"
+                }`}>
+                  {submittedGrievance?.priority}
+                </span>
+              </p>
+              <p><strong className="text-gray-400">Status:</strong> <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">{submittedGrievance?.status}</span></p>
+              <p><strong className="text-gray-400">Description:</strong> {submittedGrievance?.description}</p>
+            </div>
+            
+            <button 
+              onClick={() => {
+                setForm({ name: "", email: "", category: "", title: "", description: "" });
+                setSubmitted(false);
+              }}
+              className="mt-6 bg-indigo-600 px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition cursor-pointer text-white font-semibold"
+            >
+              Submit Another Grievance
+            </button>
           </div>
         ) : (
           <form className="space-y-6" onSubmit={handleSubmit}>

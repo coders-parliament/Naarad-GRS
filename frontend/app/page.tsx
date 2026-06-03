@@ -4,39 +4,6 @@ export default function Home() {
   return (
     <div className="bg-[#0B0F19] text-white min-h-screen">
 
-      {/* NAVBAR */}
-      
-
-<div className="flex justify-between items-center px-8 py-4">
-
-  {/* Logo */}
-  <h1 className="text-xl font-bold text-indigo-400">
-    Naarad
-  </h1>
-
-  {/* Buttons */}
-  <div className="flex gap-4">
-
-    {/* Admin Button */}
-    <Link
-      href="/admin"
-      className="text-white hover:text-indigo-400 transition"
-    >
-      Admin
-    </Link>
-
-    {/* Submit Button */}
-    <Link
-      href="/submit"
-      className="bg-indigo-600 px-5 py-2 rounded-xl hover:bg-indigo-700 transition"
-    >
-      Submit Grievance
-    </Link>
-
-  </div>
-
-</div>
-
       {/* HERO */}
       <section className="text-center py-28 px-6 relative">
 
@@ -54,11 +21,10 @@ export default function Home() {
           intelligent AI prioritization.
         </p>
 
-        <Link
-          href="/submit"
-          className="bg-orange-500 px-8 py-3 rounded-xl text-lg hover:bg-orange-600 transition shadow-lg hover:scale-105 inline-block"
-        >
-          Submit Complaint
+        <Link href="/submit">
+          <button className="bg-orange-500 px-8 py-3 rounded-xl text-lg hover:bg-orange-600 transition shadow-lg hover:scale-105">
+            Submit Complaint
+          </button>
         </Link>
       </section>
 
@@ -107,11 +73,10 @@ export default function Home() {
           Transparent. Fast. AI-driven.
         </p>
 
-        <Link
-          href="/submit"
-          className="bg-indigo-600 px-8 py-3 rounded-xl hover:bg-indigo-700 transition hover:scale-105 inline-block"
-        >
-          Get Started
+        <Link href="/submit">
+          <button className="bg-indigo-600 px-8 py-3 rounded-xl hover:bg-indigo-700 transition hover:scale-105">
+            Get Started
+          </button>
         </Link>
       </section>
 
