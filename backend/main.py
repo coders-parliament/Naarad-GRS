@@ -122,7 +122,7 @@ def create_grievance(
             pass
 
     # Process with AI
-    from backend.app.ai import analyze_grievance
+    from app.ai import analyze_grievance
     ai_results = analyze_grievance(grievance.title, grievance.description)
 
     # Use selected category if it's not "Other" or empty, otherwise fallback to AI predicted category
@@ -194,5 +194,5 @@ def analyze_text(payload: dict):
     description = payload.get("description", "")
     if not title and not description:
         raise HTTPException(status_code=400, detail="Title or description is required")
-    from backend.app.ai import analyze_grievance
+    from app.ai import analyze_grievance
     return analyze_grievance(title, description)
