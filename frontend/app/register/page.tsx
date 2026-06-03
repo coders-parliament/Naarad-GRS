@@ -63,27 +63,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div
-      className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        bg-gray-100
-      "
-    >
-      <div
-        className="
-          bg-white
-          p-8
-          rounded-xl
-          shadow-lg
-          w-full
-          max-w-md
-          text-black
-        "
-      >
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-bg-primary text-text-primary px-4 py-12 relative transition-colors duration-300">
+      {/* Glow background */}
+      <div className="absolute inset-0 flex justify-center items-center -z-10 overflow-hidden">
+        <div className="w-[500px] h-[500px] bg-accent-primary opacity-10 blur-3xl rounded-full"></div>
+      </div>
+
+      <div className="w-full max-w-md bg-bg-secondary border border-border-custom p-8 rounded-2xl shadow-2xl backdrop-blur-md transition-colors duration-300">
+        <h1 className="text-3xl font-extrabold text-center mb-6 text-text-primary tracking-tight">
           Register
         </h1>
 
@@ -122,11 +109,11 @@ export default function RegisterPage() {
           <AuthButton text={loading ? "Registering..." : "Register"} disabled={loading} />
         </form>
 
-        <p className="text-center mt-6 text-gray-600">
+        <p className="text-center mt-6 text-text-secondary">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-blue-600 font-semibold hover:underline"
+            className="text-accent-primary font-semibold hover:underline"
           >
             Login
           </Link>

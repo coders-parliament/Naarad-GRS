@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import AuthInput from "@/components/AuthInput";
+import AuthButton from "@/components/AuthButton";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -65,104 +66,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        bg-gray-100
-      "
-    >
-      <div
-        className="
-          bg-white
-          p-8
-          rounded-xl
-          shadow-lg
-          w-full
-          max-w-md
-        "
-      >
-        <h1
-          className="
-            text-3xl
-            font-bold
-            text-center
-            mb-6
-          "
-        >
+    <div className="min-h-screen flex items-center justify-center bg-bg-primary text-text-primary px-4 py-12 relative transition-colors duration-300">
+      {/* Glow background */}
+      <div className="absolute inset-0 flex justify-center items-center -z-10 overflow-hidden">
+        <div className="w-[500px] h-[500px] bg-accent-primary opacity-10 blur-3xl rounded-full"></div>
+      </div>
+
+      <div className="w-full max-w-md bg-bg-secondary border border-border-custom p-8 rounded-2xl shadow-2xl backdrop-blur-md transition-colors duration-300">
+        <h1 className="text-3xl font-extrabold text-center mb-6 text-text-primary tracking-tight">
           Login
         </h1>
 
         {error && (
-          <p className="text-red-500 mb-4 text-sm">
+          <p className="text-red-500 mb-4 text-sm text-center">
             {error}
           </p>
         )}
 
         <div className="space-y-4">
-
-          <input
+          <AuthInput
             type="email"
             placeholder="Enter Email"
             value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            className="
-              w-full
-              p-3
-              border
-              rounded-lg
-              outline-none
-              focus:ring-2
-              focus:ring-blue-500
-            "
+            onChange={(e) => setEmail(e.target.value)}
           />
 
-          <input
+          <AuthInput
             type="password"
             placeholder="Enter Password"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
-            className="
-              w-full
-              p-3
-              border
-              rounded-lg
-              outline-none
-              focus:ring-2
-              focus:ring-blue-500
-            "
+            onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button
-            onClick={handleLogin}
-            className="
-              w-full
-              bg-blue-600
-              text-white
-              p-3
-              rounded-lg
-              hover:bg-blue-700
-              transition
-            "
-          >
-            Login
-          </button>
+          <AuthButton text="Login" onClick={handleLogin} />
         </div>
 
-        <p className="text-center mt-6">
+        <p className="text-center mt-6 text-text-secondary">
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="
-              text-blue-600
-              font-semibold
-            "
+            className="text-accent-primary font-semibold hover:underline"
           >
             Register
           </Link>

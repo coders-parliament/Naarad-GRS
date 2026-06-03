@@ -20,14 +20,14 @@ export default function GrievanceCard({ grievance }: Props) {
   });
 
   return (
-    <div className="border border-white/10 rounded-xl p-6 shadow-lg bg-white/5 backdrop-blur-lg hover:border-indigo-500/50 transition duration-300">
+    <div className="border border-border-custom rounded-xl p-6 shadow-lg bg-bg-secondary hover:border-accent-primary transition duration-300">
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-3">
+          <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
             {grievance.title}
-            <span className="text-sm font-mono text-gray-400">#{grievance.id}</span>
+            <span className="text-sm font-mono text-text-secondary">#{grievance.id}</span>
           </h2>
-          <span className="inline-block mt-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold">
+          <span className="inline-block mt-2 px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-xs font-semibold">
             {grievance.category}
           </span>
         </div>
@@ -47,11 +47,11 @@ export default function GrievanceCard({ grievance }: Props) {
         </div>
       </div>
 
-      <p className="mt-4 text-gray-300 text-sm leading-relaxed">
+      <p className="mt-4 text-text-secondary text-sm leading-relaxed">
         {grievance.description}
       </p>
 
-      <div className="flex justify-between items-center text-xs text-gray-500 mt-6 border-t border-white/5 pt-4">
+      <div className="flex justify-between items-center text-xs text-text-secondary mt-6 border-t border-border-custom pt-4">
         <span>Submitted: {formattedDate}</span>
       </div>
     </div>

@@ -12,6 +12,7 @@ export default function Navbar({
   role: initialRole,
 }: NavbarProps) {
   const [role, setRole] = useState<"guest" | "user" | "admin">("guest");
+  const [isLight, setIsLight] = useState(false);
   const router = useRouter();
 
   const checkAuth = async () => {
@@ -45,6 +46,16 @@ export default function Navbar({
   };
 
   useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const isLightMode = savedTheme === "light";
+    if (isLightMode) {
+      document.documentElement.classList.add("light");
+      setIsLight(true);
+    } else {
+      document.documentElement.classList.remove("light");
+      setIsLight(false);
+    }
+
     if (initialRole) {
       setRole(initialRole);
       return;
@@ -65,6 +76,19 @@ export default function Navbar({
     };
   }, [initialRole]);
 
+  const toggleTheme = () => {
+    const root = document.documentElement;
+    if (root.classList.contains("light")) {
+      root.classList.remove("light");
+      localStorage.setItem("theme", "dark");
+      setIsLight(false);
+    } else {
+      root.classList.add("light");
+      localStorage.setItem("theme", "light");
+      setIsLight(true);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.dispatchEvent(new Event("auth-change"));
@@ -72,21 +96,21 @@ export default function Navbar({
   };
 
   return (
-    <nav className="w-full border-b border-white/10 bg-black/30 backdrop-blur-md">
+    <nav className="w-full border-b border-border-custom bg-black/30 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link
           href="/"
-          className="text-2xl font-bold tracking-wide"
+          className="text-2xl font-bold tracking-wide text-text-primary"
         >
           Naarad GRS
         </Link>
 
         {/* Navigation */}
-        <div className="flex items-center gap-6 text-sm">
+        <div className="flex items-center gap-6 text-sm text-text-secondary">
           <Link
             href="/"
-            className="hover:text-cyan-400 transition"
+            className="hover:text-accent-primary transition"
           >
             Home
           </Link>
@@ -95,14 +119,14 @@ export default function Navbar({
             <>
               <Link
                 href="/dashboard"
-                className="hover:text-cyan-400 transition"
+                className="hover:text-accent-primary transition"
               >
                 Dashboard
               </Link>
 
               <Link
                 href="/submit"
-                className="hover:text-cyan-400 transition"
+                className="hover:text-accent-primary transition"
               >
                 Submit Grievance
               </Link>
@@ -112,7 +136,7 @@ export default function Navbar({
           {role === "admin" && (
             <Link
               href="/admin"
-              className="hover:text-cyan-400 transition"
+              className="hover:text-accent-primary transition"
             >
               Admin Panel
             </Link>
@@ -122,14 +146,14 @@ export default function Navbar({
             <>
               <Link
                 href="/login"
-                className="hover:text-cyan-400 transition"
+                className="hover:text-accent-primary transition"
               >
                 Login
               </Link>
 
               <Link
                 href="/register"
-                className="hover:text-cyan-400 transition"
+                className="hover:text-accent-primary transition"
               >
                 Register
               </Link>
@@ -137,11 +161,20 @@ export default function Navbar({
           ) : (
             <button 
               onClick={handleLogout}
-              className="hover:text-red-400 transition cursor-pointer"
+              className="hover:text-red-400 transition cursor-pointer text-text-secondary"
             >
               Logout
             </button>
           )}
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-custom bg-bg-secondary hover:bg-bg-input transition cursor-pointer text-xs font-semibold text-text-primary"
+            title="Toggle Theme"
+          >
+            {isLight ? "🌙 Dark" : "☀️ Light"}
+          </button>
         </div>
       </div>
     </nav>

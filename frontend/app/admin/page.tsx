@@ -69,18 +69,18 @@ export default function AdminDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="text-center py-20 text-gray-400 animate-pulse">
-        Loading admin dashboard data...
+      <div className="min-h-screen bg-bg-primary text-text-primary flex items-center justify-center transition-colors duration-300">
+        <div className="text-xl text-text-secondary animate-pulse">Loading admin dashboard data...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center border-b border-white/10 pb-4">
+      <div className="flex justify-between items-center border-b border-border-custom pb-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">Admin Control Panel</h1>
-          <p className="text-sm text-gray-400 mt-1">Manage public citizen grievances</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-text-primary">Admin Control Panel</h1>
+          <p className="text-sm text-text-secondary mt-1">Manage public citizen grievances</p>
         </div>
         <span className="bg-red-500/20 text-red-400 text-xs px-3 py-1.5 rounded-full font-bold border border-red-500/30">
           Admin Session
@@ -93,10 +93,10 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="overflow-x-auto bg-white/5 border border-white/10 rounded-xl shadow-2xl">
+      <div className="overflow-x-auto bg-bg-secondary border border-border-custom rounded-xl shadow-2xl">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-white/10 text-gray-300 text-xs uppercase tracking-wider">
+            <tr className="bg-bg-primary/50 text-text-secondary text-xs uppercase tracking-wider">
               <th className="p-4 font-semibold">ID</th>
               <th className="p-4 font-semibold">Submitter</th>
               <th className="p-4 font-semibold">Title</th>
@@ -106,37 +106,37 @@ export default function AdminDashboard() {
               <th className="p-4 font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-border-custom">
             {grievances.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500 text-sm">
+                <td colSpan={7} className="p-8 text-center text-text-secondary text-sm">
                   No grievances found in database.
                 </td>
               </tr>
             ) : (
               grievances.map((g) => (
-                <tr key={g.id} className="hover:bg-white/5 transition text-sm">
-                  <td className="p-4 font-mono text-indigo-400 font-bold">#{g.id}</td>
+                <tr key={g.id} className="hover:bg-bg-input/50 transition text-sm">
+                  <td className="p-4 font-mono text-accent-primary font-bold">#{g.id}</td>
                   <td className="p-4">
                     {g.user_id ? (
                       <div>
-                        <p className="text-white font-medium">{g.email}</p>
-                        <span className="text-xs text-indigo-400">Registered Citizen</span>
+                        <p className="text-text-primary font-medium">{g.email}</p>
+                        <span className="text-xs text-accent-primary">Registered Citizen</span>
                       </div>
                     ) : (
                       <div>
-                        <p className="text-white font-medium">{g.name || "Anonymous"}</p>
-                        <p className="text-xs text-gray-400">{g.email || "No contact email"}</p>
-                        <span className="text-xs text-gray-500 font-semibold italic">Guest Submission</span>
+                        <p className="text-text-primary font-medium">{g.name || "Anonymous"}</p>
+                        <p className="text-xs text-text-secondary">{g.email || "No contact email"}</p>
+                        <span className="text-xs text-text-secondary font-semibold italic">Guest Submission</span>
                       </div>
                     )}
                   </td>
-                  <td className="p-4 font-medium text-white max-w-xs truncate" title={g.description}>
+                  <td className="p-4 font-medium text-text-primary max-w-xs truncate" title={g.description}>
                     <p className="font-semibold">{g.title}</p>
-                    <p className="text-xs text-gray-400 truncate mt-0.5">{g.description}</p>
+                    <p className="text-xs text-text-secondary truncate mt-0.5">{g.description}</p>
                   </td>
                   <td className="p-4">
-                    <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold">
+                    <span className="px-2.5 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-xs font-semibold">
                       {g.category}
                     </span>
                   </td>
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                       value={g.status}
                       disabled={updatingId === g.id}
                       onChange={(e) => handleStatusChange(g.id, e.target.value)}
-                      className="bg-[#1A1F2E] border border-gray-600 rounded px-2.5 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
+                      className="bg-bg-input border border-border-custom rounded px-2.5 py-1 text-xs text-text-primary outline-none focus:ring-1 focus:ring-accent-primary cursor-pointer disabled:opacity-50"
                     >
                       <option value="Pending">Pending</option>
                       <option value="Resolved">Resolved</option>

@@ -2,27 +2,27 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="bg-[#0B0F19] text-white min-h-screen">
+    <div className="bg-bg-primary text-text-primary min-h-screen transition-colors duration-300">
 
       {/* HERO */}
       <section className="text-center py-28 px-6 relative">
 
         {/* Glow background */}
         <div className="absolute inset-0 flex justify-center items-center -z-10">
-          <div className="w-[500px] h-[500px] bg-indigo-600 opacity-20 blur-3xl rounded-full"></div>
+          <div className="w-[500px] h-[500px] bg-accent-primary opacity-10 blur-3xl rounded-full"></div>
         </div>
 
-        <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+        <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight tracking-tight text-text-primary">
           AI-Powered Grievance <br /> Redressal System
         </h1>
 
-        <p className="text-gray-400 max-w-2xl mx-auto mb-10 text-lg">
+        <p className="text-text-secondary max-w-2xl mx-auto mb-10 text-lg">
           Submit complaints, track progress, and get faster resolutions with
           intelligent AI prioritization.
         </p>
 
         <Link href="/submit">
-          <button className="bg-orange-500 px-8 py-3 rounded-xl text-lg hover:bg-orange-600 transition shadow-lg hover:scale-105">
+          <button className="bg-accent-primary px-8 py-3 rounded-xl text-lg hover:bg-accent-hover text-white transition shadow-lg hover:scale-105 cursor-pointer font-semibold shadow-accent-primary/20">
             Submit Complaint
           </button>
         </Link>
@@ -30,32 +30,32 @@ export default function Home() {
 
       {/* HOW IT WORKS */}
       <section className="py-24 px-8">
-        <h2 className="text-3xl font-semibold text-center mb-16">
+        <h2 className="text-3xl font-bold text-center mb-16 text-text-primary">
           How It Works
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
 
           {/* Card 1 */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 p-8 rounded-2xl hover:scale-105 transition duration-300">
-            <h3 className="text-xl font-semibold mb-3">Submit</h3>
-            <p className="text-gray-400">
+          <div className="bg-bg-secondary border border-border-custom p-8 rounded-2xl hover:scale-105 transition duration-300 shadow-md">
+            <h3 className="text-xl font-bold mb-3 text-text-primary">Submit</h3>
+            <p className="text-text-secondary">
               Raise your complaint easily with AI guidance.
             </p>
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 p-8 rounded-2xl hover:scale-105 transition duration-300">
-            <h3 className="text-xl font-semibold mb-3">Analyze</h3>
-            <p className="text-gray-400">
+          <div className="bg-bg-secondary border border-border-custom p-8 rounded-2xl hover:scale-105 transition duration-300 shadow-md">
+            <h3 className="text-xl font-bold mb-3 text-text-primary">Analyze</h3>
+            <p className="text-text-secondary">
               AI categorizes and prioritizes issues instantly.
             </p>
           </div>
 
           {/* Card 3 */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 p-8 rounded-2xl hover:scale-105 transition duration-300">
-            <h3 className="text-xl font-semibold mb-3">Resolve</h3>
-            <p className="text-gray-400">
+          <div className="bg-bg-secondary border border-border-custom p-8 rounded-2xl hover:scale-105 transition duration-300 shadow-md">
+            <h3 className="text-xl font-bold mb-3 text-text-primary">Resolve</h3>
+            <p className="text-text-secondary">
               Authorities act quickly while you track updates.
             </p>
           </div>
@@ -65,29 +65,29 @@ export default function Home() {
 
       {/* CTA */}
       <section className="py-24 text-center">
-        <h2 className="text-3xl font-semibold mb-4">
+        <h2 className="text-3xl font-bold mb-4 text-text-primary">
           Raise your voice. Get it resolved.
         </h2>
 
-        <p className="text-gray-400 mb-8">
+        <p className="text-text-secondary mb-8">
           Transparent. Fast. AI-driven.
         </p>
 
         <Link href="/submit">
-          <button className="bg-indigo-600 px-8 py-3 rounded-xl hover:bg-indigo-700 transition hover:scale-105">
+          <button className="bg-accent-primary px-8 py-3 rounded-xl hover:bg-accent-hover text-white transition hover:scale-105 cursor-pointer font-semibold shadow-lg shadow-accent-primary/20">
             Get Started
           </button>
         </Link>
       </section>
 
       {/* FOOTER */}
-      <footer className="text-center py-8 text-gray-500 border-t border-white/10">
+      <footer className="text-center py-8 text-text-secondary border-t border-border-custom">
         © 2026 Naarad GRS • Built for citizens
       </footer>
 
       {/* FLOATING BOT */}
       <div className="fixed bottom-6 right-6">
-        <button className="bg-indigo-600 px-5 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition hover:scale-110">
+        <button className="bg-accent-primary text-white px-5 py-3 rounded-full shadow-lg hover:bg-accent-hover transition hover:scale-110 cursor-pointer shadow-accent-primary/20">
           💬
         </button>
       </div>

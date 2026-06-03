@@ -20,16 +20,7 @@ export default function AuthInput({
       value={value}
       onChange={onChange}
       name={name}
-      className="
-        w-full
-        p-3
-        border
-        rounded-lg
-        outline-none
-        focus:ring-2
-        focus:ring-blue-500
-        text-black
-      "
+      className="w-full p-3 rounded-lg bg-bg-input text-text-primary border border-border-custom placeholder-text-secondary/40 focus:outline-none focus:ring-2 focus:ring-accent-primary transition duration-200"
     />
   );
 }

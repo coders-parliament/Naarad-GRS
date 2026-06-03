@@ -104,16 +104,16 @@ export default function SubmitPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white flex items-center justify-center px-4 py-10 relative">
+    <div className="min-h-screen bg-bg-primary text-text-primary flex items-center justify-center px-4 py-10 relative transition-colors duration-300">
 
       {/* Glow */}
       <div className="absolute inset-0 flex justify-center items-center -z-10">
-        <div className="w-[500px] h-[500px] bg-indigo-600 opacity-20 blur-3xl rounded-full"></div>
+        <div className="w-[500px] h-[500px] bg-accent-primary opacity-10 blur-3xl rounded-full"></div>
       </div>
 
-      <div className="w-full max-w-3xl bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-lg">
+      <div className="w-full max-w-3xl bg-bg-secondary border border-border-custom rounded-2xl p-8 shadow-2xl">
 
-        <h1 className="text-3xl font-bold mb-6 text-center">
+        <h1 className="text-3xl font-extrabold mb-6 text-center text-text-primary">
           Submit Your Grievance
         </h1>
 
@@ -122,16 +122,16 @@ export default function SubmitPage() {
             <h2 className="text-3xl text-green-400 font-semibold mb-4">
               ✅ Grievance Submitted Successfully!
             </h2>
-            <p className="text-gray-300">
+            <p className="text-text-secondary">
               Your complaint has been recorded. You can track its progress on your dashboard or via the ID below:
             </p>
             
-            <div className="bg-white/10 p-6 rounded-xl border border-white/10 text-left space-y-4 max-w-xl mx-auto">
-              <p><strong className="text-gray-400">Tracking ID:</strong> <span className="text-indigo-400 font-mono text-lg font-bold">#{submittedGrievance?.id}</span></p>
-              <p><strong className="text-gray-400">Title:</strong> {submittedGrievance?.title}</p>
-              <p><strong className="text-gray-400">Category:</strong> <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-sm font-semibold">{submittedGrievance?.category}</span></p>
+            <div className="bg-bg-primary border border-border-custom p-6 rounded-xl text-left space-y-4 max-w-xl mx-auto">
+              <p><strong className="text-text-secondary">Tracking ID:</strong> <span className="text-accent-primary font-mono text-lg font-bold">#{submittedGrievance?.id}</span></p>
+              <p><strong className="text-text-secondary">Title:</strong> {submittedGrievance?.title}</p>
+              <p><strong className="text-text-secondary">Category:</strong> <span className="px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-sm font-semibold">{submittedGrievance?.category}</span></p>
               <p>
-                <strong className="text-gray-400">Priority (AI Detected):</strong>{" "}
+                <strong className="text-text-secondary">Priority (AI Detected):</strong>{" "}
                 <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                   submittedGrievance?.priority === "High" 
                     ? "bg-red-500/20 text-red-400" 
@@ -142,8 +142,8 @@ export default function SubmitPage() {
                   {submittedGrievance?.priority}
                 </span>
               </p>
-              <p><strong className="text-gray-400">Status:</strong> <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">{submittedGrievance?.status}</span></p>
-              <p><strong className="text-gray-400">Description:</strong> {submittedGrievance?.description}</p>
+              <p><strong className="text-text-secondary">Status:</strong> <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">{submittedGrievance?.status}</span></p>
+              <p><strong className="text-text-secondary">Description:</strong> {submittedGrievance?.description}</p>
             </div>
             
             <button 
@@ -151,7 +151,7 @@ export default function SubmitPage() {
                 setForm({ name: "", email: "", category: "", title: "", description: "" });
                 setSubmitted(false);
               }}
-              className="mt-6 bg-indigo-600 px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition cursor-pointer text-white font-semibold"
+              className="mt-6 bg-accent-primary px-6 py-2.5 rounded-lg hover:bg-accent-hover transition cursor-pointer text-white font-semibold shadow-lg shadow-accent-primary/10"
             >
               Submit Another Grievance
             </button>
@@ -182,25 +182,25 @@ export default function SubmitPage() {
 
             {/* Category */}
             <div className="relative">
-              <label className="block mb-2 text-sm text-gray-300">Category</label>
+              <label className="block mb-2 text-sm text-text-secondary font-semibold">Category</label>
 
               <div
                 onClick={() => setOpen(!open)}
-                className="w-full p-3 rounded-lg bg-[#1A1F2E] border border-gray-600 cursor-pointer flex justify-between items-center"
+                className="w-full p-3 rounded-lg bg-bg-input border border-border-custom cursor-pointer flex justify-between items-center text-text-primary"
               >
-                <span className={form.category ? "text-white" : "text-gray-400"}>
+                <span className={form.category ? "text-text-primary font-medium" : "text-text-secondary"}>
                   {form.category || "Select category"}
                 </span>
                 <span>▼</span>
               </div>
 
               {open && (
-                <div className="absolute w-full mt-2 bg-[#1A1F2E] border border-gray-600 rounded-lg shadow-lg z-50">
+                <div className="absolute w-full mt-2 bg-bg-input border border-border-custom rounded-lg shadow-lg z-50 text-text-primary">
                   {categories.map((cat) => (
                     <div
                       key={cat}
                       onClick={() => handleCategorySelect(cat)}
-                      className="p-3 hover:bg-indigo-600 cursor-pointer"
+                      className="p-3 hover:bg-accent-primary hover:text-white cursor-pointer transition"
                     >
                       {cat}
                     </div>
@@ -220,7 +220,7 @@ export default function SubmitPage() {
 
             {/* Description */}
             <div>
-              <label className="block mb-2 text-sm text-gray-300">
+              <label className="block mb-2 text-sm text-text-secondary font-semibold">
                 Description
               </label>
               <textarea
@@ -229,24 +229,24 @@ export default function SubmitPage() {
                 onChange={handleChange}
                 rows={5}
                 placeholder="Describe your issue..."
-                className="w-full p-3 rounded-lg bg-[#1A1F2E] text-white border border-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-3 rounded-lg bg-bg-input text-text-primary border border-border-custom placeholder-text-secondary/40 focus:outline-none focus:ring-2 focus:ring-accent-primary transition duration-200"
               />
             </div>
 
             {/* File */}
             <div>
-              <label className="block mb-2 text-sm text-gray-300">
+              <label className="block mb-2 text-sm text-text-secondary font-semibold">
                 Upload File (optional)
               </label>
               <input
                 type="file"
-                className="w-full text-gray-400 file:bg-indigo-600 file:text-white file:border-0 file:px-4 file:py-2 file:rounded-lg hover:file:bg-indigo-700"
+                className="w-full text-text-secondary file:bg-accent-primary file:text-white file:border-0 file:px-4 file:py-2 file:rounded-lg hover:file:bg-accent-hover transition cursor-pointer"
               />
             </div>
 
             {/* Button */}
-            <Button>
-              Submit Grievance
+            <Button disabled={loading}>
+              {loading ? "Submitting..." : "Submit Grievance"}
             </Button>
 
           </form>

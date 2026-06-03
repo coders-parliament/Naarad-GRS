@@ -40,27 +40,27 @@ export default function DashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#0B0F19] text-white flex items-center justify-center">
-        <div className="text-xl text-gray-400 animate-pulse">Loading dashboard data...</div>
+      <div className="min-h-screen bg-bg-primary text-text-primary flex items-center justify-center transition-colors duration-300">
+        <div className="text-xl text-text-secondary animate-pulse">Loading dashboard data...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white p-6 relative">
+    <div className="min-h-screen bg-bg-primary text-text-primary p-6 relative transition-colors duration-300">
       {/* Glow background */}
       <div className="absolute inset-0 flex justify-center items-center -z-10 overflow-hidden">
-        <div className="w-[500px] h-[500px] bg-indigo-600 opacity-10 blur-3xl rounded-full"></div>
+        <div className="w-[500px] h-[500px] bg-accent-primary opacity-10 blur-3xl rounded-full"></div>
       </div>
 
       <div className="max-w-5xl mx-auto space-y-8">
-        <div className="flex justify-between items-center border-b border-white/10 pb-6">
+        <div className="flex justify-between items-center border-b border-border-custom pb-6">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight">Citizen Dashboard</h1>
-            <p className="text-gray-400 mt-2">Logged in as: <span className="text-indigo-400 font-semibold">{user?.email}</span></p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-text-primary">Citizen Dashboard</h1>
+            <p className="text-text-secondary mt-2">Logged in as: <span className="text-accent-primary font-semibold">{user?.email}</span></p>
           </div>
           <Link href="/submit">
-            <button className="bg-indigo-600 px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition font-semibold hover:scale-105 cursor-pointer shadow-lg shadow-indigo-600/20">
+            <button className="bg-accent-primary text-white px-5 py-2.5 rounded-xl hover:bg-accent-hover transition font-semibold hover:scale-105 cursor-pointer shadow-lg shadow-accent-primary/20">
               Submit Grievance
             </button>
           </Link>
@@ -73,10 +73,10 @@ export default function DashboardPage() {
         )}
 
         {grievances.length === 0 ? (
-          <div className="text-center py-20 bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md">
-            <p className="text-gray-400 text-lg mb-6">You haven&apos;t submitted any grievances yet.</p>
+          <div className="text-center py-20 bg-bg-secondary border border-border-custom rounded-2xl p-8 backdrop-blur-md">
+            <p className="text-text-secondary text-lg mb-6">You haven&apos;t submitted any grievances yet.</p>
             <Link href="/submit">
-              <button className="bg-indigo-600 px-6 py-3 rounded-xl hover:bg-indigo-700 transition font-semibold">
+              <button className="bg-accent-primary text-white px-6 py-3 rounded-xl hover:bg-accent-hover transition font-semibold hover:scale-105 cursor-pointer shadow-lg shadow-accent-primary/20">
                 Submit Your First Complaint
               </button>
             </Link>

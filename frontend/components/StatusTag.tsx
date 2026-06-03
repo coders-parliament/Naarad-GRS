@@ -3,29 +3,15 @@ type Props = {
 };
 
 export default function StatusBadge({ status }: Props) {
-  let color = "";
-
-  switch (status) {
-    case "Pending":
-      color = "bg-yellow-500";
-      break;
-
-    case "Resolved":
-      color = "bg-green-500";
-      break;
-
-    case "Urgent":
-      color = "bg-red-500";
-      break;
-
-    default:
-      color = "bg-gray-500";
-  }
+  const styles =
+    status === "Pending"
+      ? "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20"
+      : status === "Resolved"
+      ? "bg-green-500/10 text-green-500 border border-green-500/20"
+      : "bg-red-500/10 text-red-500 border border-red-500/20";
 
   return (
-    <span
-      className={`px-3 py-1 rounded-full text-white text-sm ${color}`}
-    >
+    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${styles}`}>
       {status}
     </span>
   );
