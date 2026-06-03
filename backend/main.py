@@ -1,14 +1,37 @@
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from backend.app.database import SessionLocal, engine, Base
 import backend.app.models as models
 import backend.app.schemas as schemas
 import backend.app.auth as auth
+import os
+import shutil
+import uuid
 
 Base.metadata.create_all(bind=engine)
 
+# Run migration check for attachment_url on existing SQLite table
+db_mig = SessionLocal()
+try:
+    db_mig.execute(text("SELECT attachment_url FROM grievances LIMIT 1"))
+except Exception:
+    try:
+        db_mig.execute(text("ALTER TABLE grievances ADD COLUMN attachment_url VARCHAR"))
+        db_mig.commit()
+        print("Database migration: attachment_url column added to grievances table.")
+    except Exception as e:
+        print("Database migration warning: failed to add attachment_url column:", e)
+finally:
+    db_mig.close()
+
 app = FastAPI()
+
+# Ensure static directories exist
+os.makedirs("backend/static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -101,6 +124,22 @@ def get_me(user: models.User = Depends(get_current_user)):
         "role": user.role
     }
 
+# FILE UPLOAD
+@app.post("/upload")
+def upload_file(file: UploadFile = File(...)):
+    os.makedirs("backend/static/uploads", exist_ok=True)
+    ext = os.path.splitext(file.filename)[1]
+    unique_filename = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join("backend/static/uploads", unique_filename)
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
+        
+    return {"url": f"http://127.0.0.1:8000/static/uploads/{unique_filename}"}
+
 # CREATE GRIEVANCE
 @app.post("/grievance", response_model=schemas.GrievanceOut)
 def create_grievance(
@@ -138,7 +177,8 @@ def create_grievance(
         status="Pending",
         name=grievance.name,
         email=grievance.email,
-        user_id=user_id
+        user_id=user_id,
+        attachment_url=grievance.attachment_url
     )
 
     db.add(new_grievance)

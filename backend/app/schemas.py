@@ -24,6 +24,7 @@ class GrievanceCreate(BaseModel):
     category: Optional[str] = "Other"
     name: Optional[str] = None
     email: Optional[str] = None
+    attachment_url: Optional[str] = None
 
 class GrievanceUpdate(BaseModel):
     title: Optional[str] = None
@@ -31,6 +32,7 @@ class GrievanceUpdate(BaseModel):
     category: Optional[str] = None
     priority: Optional[str] = None
     status: Optional[str] = None
+    attachment_url: Optional[str] = None
 
 class GrievanceOut(BaseModel):
     id: int
@@ -42,6 +44,7 @@ class GrievanceOut(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     user_id: Optional[int] = None
+    attachment_url: Optional[str] = None
     created_at: datetime
 
     class Config:
