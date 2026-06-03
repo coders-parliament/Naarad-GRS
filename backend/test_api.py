@@ -1,17 +1,17 @@
 import os
 import sys
 
-# Add backend directory to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add workspace root directory to path to resolve backend package correctly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import HTTPException
-from app.database import Base
+from backend.app.database import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import app.models as models
-import app.schemas as schemas
-import app.auth as auth
-from app.ai import analyze_grievance
+import backend.app.models as models
+import backend.app.schemas as schemas
+import backend.app.auth as auth
+from backend.app.ai import analyze_grievance
 import main
 
 # Use in-memory SQLite for testing

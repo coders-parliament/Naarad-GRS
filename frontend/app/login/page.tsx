@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AuthInput from "@/components/AuthInput";
 import AuthButton from "@/components/AuthButton";
 
