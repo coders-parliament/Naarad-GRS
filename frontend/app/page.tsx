@@ -4,37 +4,6 @@ export default function Home() {
   return (
     <div className="bg-[#0B0F19] text-white min-h-screen">
 
-      {/* NAVBAR */}
-      
-
-<div className="flex justify-between items-center px-8 py-4">
-
-  {/* Logo */}
-  <h1 className="text-xl font-bold text-indigo-400">
-    Naarad
-  </h1>
-
-  {/* Buttons */}
-  <div className="flex gap-4">
-
-    {/* Admin Button */}
-    <Link href="/admin">
-      <button className="text-white hover:text-indigo-400 transition">
-        Admin
-      </button>
-    </Link>
-
-    {/* Submit Button */}
-    <Link href="/submit">
-      <button className="bg-indigo-600 px-5 py-2 rounded-xl hover:bg-indigo-700 transition">
-        Submit Grievance
-      </button>
-    </Link>
-
-  </div>
-
-</div>
-
       {/* HERO */}
       <section className="text-center py-28 px-6 relative">
 

@@ -33,15 +33,31 @@ export default function LoginPage() {
 
       const data = await res.json();
 
-      if (data.access_token) {
-        localStorage.setItem(
-          "token",
-          data.access_token
-        );
+      if (res.ok && data.access_token) {
+        localStorage.setItem("token", data.access_token);
+        window.dispatchEvent(new Event("auth-change"));
+
+        // Fetch user info to redirect correctly based on role
+        try {
+          const profileRes = await fetch("http://127.0.0.1:8000/me", {
+            headers: {
+              "Authorization": `Bearer ${data.access_token}`,
+            },
+          });
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            if (profileData.role === "admin") {
+              router.push("/admin");
+              return;
+            }
+          }
+        } catch (profileErr) {
+          console.error("Failed to fetch user profile:", profileErr);
+        }
 
         router.push("/dashboard");
       } else {
-        setError("Invalid credentials");
+        setError(data.detail || "Invalid credentials");
       }
     } catch (err) {
       setError("Server error");
