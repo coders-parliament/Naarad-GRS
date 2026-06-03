@@ -1,15 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from app.database import SessionLocal, engine, Base
-import app.models as models
-import app.schemas as schemas
-import app.auth as auth
+from backend.app.database import SessionLocal, engine, Base
+import backend.app.models as models
+import backend.app.schemas as schemas
+import backend.app.auth as auth
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
