@@ -130,6 +130,13 @@ export default function Navbar({
               >
                 Submit Grievance
               </Link>
+
+              <Link
+                href="/profile"
+                className="hover:text-accent-primary transition"
+              >
+                Profile
+              </Link>
             </>
           )}
 

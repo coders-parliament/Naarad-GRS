@@ -9,6 +9,11 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password = Column(String)
     role = Column(String, default="user")
+    full_name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    ward = Column(String, nullable=True)
+    preferred_language = Column(String, default="English")
 
 class Grievance(Base):
     __tablename__ = "grievances"

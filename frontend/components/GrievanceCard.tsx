@@ -9,6 +9,8 @@ type Props = {
     status: string;
     priority: string;
     created_at: string;
+    name?: string | null;
+    email?: string | null;
   };
 };
 
@@ -19,20 +21,61 @@ export default function GrievanceCard({ grievance }: Props) {
     day: "numeric",
   });
 
+  // Map status to timeline steps
+  let activeStep = 1; // 1: Submitted, 2: AI Classified, 3: Assigned, 4: Resolved
+  if (grievance.status === "Pending") {
+    activeStep = 2; // AI has processed it, but officer not yet assigned/in progress
+  } else if (grievance.status === "Resolved") {
+    activeStep = 4;
+  } else {
+    activeStep = 3; // "In Progress" or similar
+  }
+
+  // Get officer details based on category
+  const getOfficerDetails = (cat: string) => {
+    switch (cat) {
+      case "Electricity":
+        return { name: "Er. Rajesh Patel", role: "Executive Engineer, Power Distribution Dept", phone: "+91 98234 56789" };
+      case "Water":
+        return { name: "Er. Anil Kumar", role: "Assistant Commissioner, Water Supply Dept", phone: "+91 98234 11223" };
+      case "Road":
+        return { name: "Er. Sandeep Shinde", role: "Chief Surveyor, Roads & Traffic Management", phone: "+91 98234 44556" };
+      default:
+        return { name: "Officer Swati Deshmukh", role: "Senior Officer, Municipal Grievance Cell", phone: "+91 98234 77889" };
+    }
+  };
+
+  const officer = getOfficerDetails(grievance.category);
+
   return (
-    <div className="border border-border-custom rounded-xl p-6 shadow-lg bg-bg-secondary hover:border-accent-primary transition duration-300">
-      <div className="flex justify-between items-start">
+    <div className="border border-border-custom rounded-xl p-6 shadow-lg bg-bg-secondary hover:border-accent-primary transition duration-300 flex flex-col gap-6">
+      
+      {/* Top Header Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-            {grievance.title}
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-text-primary">
+              {grievance.title}
+            </h2>
             <span className="text-sm font-mono text-text-secondary">#{grievance.id}</span>
-          </h2>
-          <span className="inline-block mt-2 px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-xs font-semibold">
-            {grievance.category}
-          </span>
+          </div>
+          <div className="flex gap-2 items-center mt-2">
+            <span className="px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-xs font-semibold">
+              {grievance.category}
+            </span>
+            {grievance.name ? (
+              <span className="text-xs text-text-secondary bg-bg-input px-2.5 py-0.5 rounded border border-border-custom">
+                👤 {grievance.name}
+              </span>
+            ) : (
+              <span className="text-xs text-text-secondary italic bg-bg-input px-2.5 py-0.5 rounded border border-border-custom">
+                🕵️‍♂️ Anonymous Submission
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-2 self-stretch md:self-auto">
           <StatusBadge status={grievance.status} />
           
           <span className={`px-2.5 py-0.5 rounded text-xs font-semibold ${
@@ -47,13 +90,97 @@ export default function GrievanceCard({ grievance }: Props) {
         </div>
       </div>
 
-      <p className="mt-4 text-text-secondary text-sm leading-relaxed">
+      {/* Description */}
+      <p className="text-text-secondary text-sm leading-relaxed">
         {grievance.description}
       </p>
 
-      <div className="flex justify-between items-center text-xs text-text-secondary mt-6 border-t border-border-custom pt-4">
-        <span>Submitted: {formattedDate}</span>
+      {/* Steps Tracking Timeline */}
+      <div className="border-t border-b border-border-custom py-6 my-2">
+        <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-4">Grievance Progress Tracker</p>
+        
+        <div className="relative flex justify-between items-center w-full">
+          {/* Progress bar background line */}
+          <div className="absolute left-0 right-0 top-1/2 h-[3px] bg-bg-input -translate-y-1/2 -z-10 rounded"></div>
+          
+          {/* Progress bar active line */}
+          <div 
+            className="absolute left-0 top-1/2 h-[3px] bg-accent-primary -translate-y-1/2 -z-10 rounded transition-all duration-500"
+            style={{ width: `${((activeStep - 1) / 3) * 100}%` }}
+          ></div>
+
+          {/* Step 1: Submitted */}
+          <div className="flex flex-col items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-300 ${
+              activeStep >= 1 
+                ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20" 
+                : "bg-bg-input text-text-secondary border border-border-custom"
+            }`}>
+              1
+            </div>
+            <span className="text-[10px] text-text-primary mt-2 font-semibold">Submitted</span>
+          </div>
+
+          {/* Step 2: AI Processed */}
+          <div className="flex flex-col items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-300 ${
+              activeStep >= 2 
+                ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20" 
+                : "bg-bg-input text-text-secondary border border-border-custom"
+            }`}>
+              2
+            </div>
+            <span className="text-[10px] text-text-primary mt-2 font-semibold">AI Classified</span>
+          </div>
+
+          {/* Step 3: Officer Assigned */}
+          <div className="flex flex-col items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-300 ${
+              activeStep >= 3 
+                ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20" 
+                : "bg-bg-input text-text-secondary border border-border-custom"
+            }`}>
+              3
+            </div>
+            <span className="text-[10px] text-text-primary mt-2 font-semibold">Officer Action</span>
+          </div>
+
+          {/* Step 4: Resolved */}
+          <div className="flex flex-col items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-300 ${
+              activeStep >= 4 
+                ? "bg-green-500 text-white shadow-lg shadow-green-500/20" 
+                : "bg-bg-input text-text-secondary border border-border-custom"
+            }`}>
+              ✓
+            </div>
+            <span className="text-[10px] text-text-primary mt-2 font-semibold">Resolved</span>
+          </div>
+        </div>
       </div>
+
+      {/* Assigned Officer / Resolution Panel */}
+      {activeStep >= 3 && (
+        <div className="bg-bg-primary rounded-xl p-4 border border-border-custom text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-1">Assigned Executive Officer</p>
+            <p className="text-text-primary font-bold">{officer.name}</p>
+            <p className="text-text-secondary">{officer.role}</p>
+          </div>
+          <a 
+            href={`tel:${officer.phone}`}
+            className="px-4 py-2 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary rounded-lg transition font-semibold"
+          >
+            📞 Contact Department
+          </a>
+        </div>
+      )}
+
+      {/* Footer Info */}
+      <div className="flex justify-between items-center text-xs text-text-secondary mt-1">
+        <span>Grievance raised: {formattedDate}</span>
+      </div>
+      
     </div>
   );
 }
