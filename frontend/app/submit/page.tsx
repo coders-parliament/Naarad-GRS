@@ -16,6 +16,7 @@ export default function SubmitPage() {
     description: "",
   });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submittedGrievance, setSubmittedGrievance] = useState<any>(null);
@@ -110,6 +111,32 @@ export default function SubmitPage() {
     setLoading(true);
     setError("");
 
+    // Step 1: Upload file if exists
+    let attachment_url = null;
+    if (selectedFile) {
+      try {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        const uploadRes = await fetch("http://127.0.0.1:8000/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload attachment");
+        }
+
+        const uploadData = await uploadRes.json();
+        attachment_url = uploadData.url;
+      } catch (err: any) {
+        setError(err.message || "Failed to upload file attachment");
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Step 2: Submit grievance
     const token = localStorage.getItem("token");
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
