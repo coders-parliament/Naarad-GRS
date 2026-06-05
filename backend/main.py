@@ -116,13 +116,23 @@ def require_role(required_role: str):
     return dependency
 
 # PROTECTED ROUTE
-@app.get("/me")
+@app.get("/me", response_model=schemas.UserOut)
 def get_me(user: models.User = Depends(get_current_user)):
-    return {
-        "id": user.id,
-        "email": user.email,
-        "role": user.role
-    }
+    return user
+
+# UPDATE PROFILE
+@app.put("/profile", response_model=schemas.UserOut)
+def update_profile(
+    profile_update: schemas.UserUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    update_data = profile_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(current_user, key, value)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
 
 # FILE UPLOAD
 @app.post("/upload")

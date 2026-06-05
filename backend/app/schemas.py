@@ -14,9 +14,21 @@ class UserOut(BaseModel):
     id: int
     email: str
     role: str
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    ward: Optional[str] = None
+    preferred_language: Optional[str] = "English"
 
     class Config:
         from_attributes = True
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    ward: Optional[str] = None
+    preferred_language: Optional[str] = None
 
 class GrievanceCreate(BaseModel):
     title: str
