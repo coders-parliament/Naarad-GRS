@@ -26,6 +26,7 @@ class Grievance(Base):
     status = Column(String, default="Pending")
     name = Column(String, nullable=True)
     email = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     attachment_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

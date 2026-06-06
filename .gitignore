@@ -47,3 +47,4 @@ Thumbs.db
 # Next.js
 # ----------------------------
 frontend/.next/
+backend/static/uploads/

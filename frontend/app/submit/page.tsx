@@ -11,6 +11,7 @@ export default function SubmitPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     category: "",
     title: "",
     description: "",
@@ -49,6 +50,7 @@ export default function SubmitPage() {
               ...prev,
               email: data.email || "",
               name: data.full_name || data.email.split("@")[0] || "",
+              phone: data.phone || "",
             }));
           }
         })
@@ -157,6 +159,7 @@ export default function SubmitPage() {
           category: form.category || "Other",
           name: isAnonymous ? null : form.name || null,
           email: isAnonymous ? null : form.email || null,
+          phone: isAnonymous ? null : form.phone || null,
         }),
       });
 
@@ -248,7 +251,7 @@ export default function SubmitPage() {
             <div className="flex gap-4 justify-center">
               <Button
                 onClick={() => {
-                  setForm({ name: "", email: "", category: "", title: "", description: "" });
+                  setForm({ name: "", email: "", phone: "", category: "", title: "", description: "" });
                   setAiPreview(null);
                   setSubmitted(false);
                 }}
@@ -288,7 +291,7 @@ export default function SubmitPage() {
 
             {/* Contact Details Fields - Shown only if NOT anonymous */}
             {!isAnonymous && (
-              <div className="grid md:grid-cols-2 gap-6 p-4 bg-bg-primary rounded-xl border border-border-custom">
+              <div className="grid md:grid-cols-3 gap-6 p-4 bg-bg-primary rounded-xl border border-border-custom">
                 <Input
                   label="Full Name"
                   name="name"
@@ -302,6 +305,13 @@ export default function SubmitPage() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="Enter your email"
+                />
+                <Input
+                  label="Phone Number (for SMS)"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="+91 98765 43210"
                 />
               </div>
             )}
