@@ -85,13 +85,6 @@ export default function Home() {
         © 2026 Naarad GRS • Built for citizens
       </footer>
 
-      {/* FLOATING BOT */}
-      <div className="fixed bottom-6 right-6">
-        <button className="bg-accent-primary text-white px-5 py-3 rounded-full shadow-lg hover:bg-accent-hover transition hover:scale-110 cursor-pointer shadow-accent-primary/20">
-          💬
-        </button>
-      </div>
-
     </div>
   );
 }

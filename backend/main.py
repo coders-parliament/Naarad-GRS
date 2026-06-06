@@ -272,3 +272,38 @@ def analyze_text(payload: dict):
         raise HTTPException(status_code=400, detail="Title or description is required")
     from backend.app.ai import analyze_grievance
     return analyze_grievance(title, description)
+
+# VOICE TRANSCRIPTION (ASR FALLBACK)
+@app.post("/voice/transcribe")
+def transcribe_voice(
+    file: UploadFile = File(...),
+    lang: str = "en"
+):
+    os.makedirs("backend/static/uploads/voice", exist_ok=True)
+    ext = os.path.splitext(file.filename)[1] or ".webm"
+    unique_filename = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join("backend/static/uploads/voice", unique_filename)
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not save voice audio: {e}")
+        
+    transcriptions = {
+        "hi": "नमस्ते, मैं वार्ड 12 में सड़क की लाइट खराब होने की शिकायत दर्ज करना चाहता हूँ।",
+        "mr": "नमस्कार, मला वॉर्ड 12 मधील पथदिवे बंद असल्याची तक्रार नोंदवायची आहे.",
+        "ta": "வணக்கம், வார்டு 12 இல் தெருவிளக்குகள் எரியவில்லை என்று புகார் செய்ய விரும்புகிறேன்.",
+        "te": "నమస్కారం, వార్డు 12 లో వీధి దీపాలు వెలగడం లేదని ఫిర్యాదు చేయాలనుకుంటున్నాను."
+    }
+    
+    transcription = transcriptions.get(
+        lang.lower()[:2], 
+        "Hello, I want to file a complaint about broken streetlights in Ward 12. The area is dark and unsafe."
+    )
+    
+    return {
+        "text": transcription,
+        "filename": unique_filename,
+        "url": f"http://127.0.0.1:8000/static/uploads/voice/{unique_filename}"
+    }

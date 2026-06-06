@@ -177,6 +177,21 @@ export default function SubmitPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleAutofillEvent = (e: any) => {
+      const { title, description } = e.detail;
+      setForm((prev) => ({
+        ...prev,
+        title: title || prev.title,
+        description: description || prev.description,
+      }));
+    };
+    window.addEventListener("autofill-grievance", handleAutofillEvent);
+    return () => {
+      window.removeEventListener("autofill-grievance", handleAutofillEvent);
+    };
+  }, []);
+
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     // Reset AI preview if title/description changes to force re-analysis

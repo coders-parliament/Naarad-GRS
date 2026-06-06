@@ -1,5 +1,6 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import VoiceAssistant from "@/components/VoiceAssistant";
 
 export const metadata = {
   title: "Naarad GRS",
@@ -21,6 +22,8 @@ export default function RootLayout({
         <main className="max-w-7xl mx-auto px-6 py-8">
           {children}
         </main>
+
+        <VoiceAssistant />
 
       </body>
 
