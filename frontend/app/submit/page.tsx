@@ -32,6 +32,125 @@ export default function SubmitPage() {
   const [aiPreview, setAiPreview] = useState<{ category: string; priority: string; sentiment: string } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
+  // File preview & compression state
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+
+  // Revoke object URL on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (filePreview && filePreview !== "pdf") {
+        URL.revokeObjectURL(filePreview);
+      }
+    };
+  }, [filePreview]);
+
+  // Compress image helper using Canvas API
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const max_width = 1000;
+          const max_height = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > max_width) {
+              height *= max_width / width;
+              width = max_width;
+            }
+          } else {
+            if (height > max_height) {
+              width *= max_height / height;
+              height = max_height;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                resolve(file);
+              }
+            },
+            "image/jpeg",
+            0.7
+          );
+        };
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+
+    // Validate size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File size exceeds 5MB limit. Please choose a smaller file.");
+      return;
+    }
+
+    // Validate format
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Unsupported format. Only JPG, PNG, and PDF are allowed.");
+      return;
+    }
+
+    // Clean up previous preview if any
+    if (filePreview && filePreview !== "pdf") {
+      URL.revokeObjectURL(filePreview);
+    }
+
+    // If it's an image, perform client-side compression
+    if (file.type.startsWith("image/")) {
+      setLoading(true);
+      try {
+        const compressed = await compressImage(file);
+        setSelectedFile(compressed);
+        const objectUrl = URL.createObjectURL(compressed);
+        setFilePreview(objectUrl);
+      } catch (err) {
+        // Fallback to uncompressed file if error
+        setSelectedFile(file);
+        const objectUrl = URL.createObjectURL(file);
+        setFilePreview(objectUrl);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // PDF or other document
+      setSelectedFile(file);
+      setFilePreview("pdf"); // Special keyword for PDF display
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (filePreview && filePreview !== "pdf") {
+      URL.revokeObjectURL(filePreview);
+    }
+    setFilePreview(null);
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -253,6 +372,7 @@ export default function SubmitPage() {
                 onClick={() => {
                   setForm({ name: "", email: "", phone: "", category: "", title: "", description: "" });
                   setAiPreview(null);
+                  handleRemoveFile();
                   setSubmitted(false);
                 }}
               >
@@ -421,12 +541,55 @@ export default function SubmitPage() {
             </div>
 
             {/* File Upload */}
-            <div>
-              <label className="block mb-2 text-sm text-text-secondary font-semibold">Upload Photo/Document (Optional)</label>
-              <input
-                type="file"
-                className="w-full text-text-secondary file:bg-bg-input file:text-text-primary file:border file:border-border-custom file:px-4 file:py-2 file:rounded-lg hover:file:bg-bg-secondary transition cursor-pointer file:mr-4 file:text-xs"
-              />
+            <div className="space-y-2">
+              <label className="block text-sm text-text-secondary font-semibold">Upload Photo/Document (Optional)</label>
+              
+              {selectedFile ? (
+                <div className="p-4 bg-bg-input border border-accent-primary/20 rounded-xl flex items-center justify-between gap-4 animate-fadeIn">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    {filePreview === "pdf" ? (
+                      <div className="w-12 h-12 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center font-bold text-lg border border-red-500/20 shrink-0">
+                        PDF
+                      </div>
+                    ) : (
+                      filePreview && (
+                        <img 
+                          src={filePreview} 
+                          alt="preview" 
+                          className="w-12 h-12 rounded-lg object-cover border border-border-custom shrink-0" 
+                        />
+                      )
+                    )}
+                    <div className="text-left overflow-hidden">
+                      <p className="text-sm font-semibold text-text-primary truncate">{selectedFile.name}</p>
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        {(selectedFile.size / 1024).toFixed(1)} KB • <span className="text-green-400 font-semibold">Compressed & Validated</span>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    className="text-xs font-bold text-red-400 hover:text-red-300 transition cursor-pointer bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg border border-red-500/20"
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="relative border-2 border-dashed border-border-custom hover:border-accent-primary rounded-xl p-6 text-center transition cursor-pointer bg-bg-input/30 group">
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                  />
+                  <div className="space-y-2">
+                    <div className="text-3xl transition group-hover:scale-110 duration-200">📁</div>
+                    <p className="text-sm font-semibold text-text-primary">Click to upload or drag & drop</p>
+                    <p className="text-xs text-text-secondary">Supported: JPG, PNG, PDF (Max size: 5MB)</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
