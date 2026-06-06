@@ -187,6 +187,7 @@ def create_grievance(
         status="Pending",
         name=grievance.name,
         email=grievance.email,
+        phone=grievance.phone,
         user_id=user_id,
         attachment_url=grievance.attachment_url
     )
@@ -229,12 +230,37 @@ def update_grievance(
         raise HTTPException(status_code=403, detail="Forbidden: Access denied to update this grievance")
 
     # Update fields
+    old_status = grievance.status
     update_data = grievance_update.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(grievance, key, value)
 
     db.commit()
     db.refresh(grievance)
+
+    # Check for status changes and send updates to citizen
+    if "status" in update_data and update_data["status"] != old_status:
+        owner_email = None
+        owner_phone = None
+        if grievance.user_id:
+            owner = db.query(models.User).filter(models.User.id == grievance.user_id).first()
+            if owner:
+                owner_email = owner.email
+                owner_phone = owner.phone
+        
+        try:
+            from backend.app.notifications import NotificationService
+            NotificationService.send_status_update(
+                grievance=grievance,
+                old_status=old_status,
+                new_status=grievance.status,
+                owner_email=owner_email,
+                owner_phone=owner_phone
+            )
+        except Exception as e:
+            # Prevent status update failing due to notification failure
+            pass
+
     return grievance
 
 # ANALYZE TEXT WITH AI (DIAGNOSTIC/DIRECT API)
