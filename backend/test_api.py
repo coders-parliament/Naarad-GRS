@@ -92,6 +92,11 @@ def test_all():
     assert g1.priority == "High"
     assert g1.attachment_url == upload_res["url"]
     
+    # Verify timeline populated on creation
+    assert len(g1.timeline) == 1
+    assert g1.timeline[0].status == "Pending"
+    print("Initial timeline entry verified:", g1.timeline[0].remarks)
+    
     # Authenticated submission
     token = login_res["access_token"]
     auth_header = f"Bearer {token}"
@@ -134,11 +139,17 @@ def test_all():
     assert len(all_g) == 2
     
     print("\n--- 6. Testing Grievance Status Updates ---")
-    # Update as admin
-    update_schema = schemas.GrievanceUpdate(status="Resolved")
+    # Update as admin with custom remarks
+    update_schema = schemas.GrievanceUpdate(status="Resolved", remarks="Resolved after main pipe repair.")
     g1_updated = main.update_grievance(g1.id, update_schema, current_user=admin_user, db=db)
     print("Grievance status updated by admin:", g1_updated.status)
     assert g1_updated.status == "Resolved"
+    
+    # Verify new timeline entry created
+    assert len(g1_updated.timeline) == 2
+    assert g1_updated.timeline[1].status == "Resolved"
+    assert g1_updated.timeline[1].remarks == "Resolved after main pipe repair."
+    print("Updated timeline entry verified:", g1_updated.timeline[1].remarks)
     
     # Try updating someone else's grievance as citizen
     try:
