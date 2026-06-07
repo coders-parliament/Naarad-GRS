@@ -81,3 +81,25 @@ class GrievanceOut(BaseModel):
     class Config:
         from_attributes = True
 
+class DuplicateDetectRequest(BaseModel):
+    title: str
+    description: str
+    category: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+class DuplicateMatchOut(BaseModel):
+    id: int
+    title: str
+    description: str
+    category: str
+    priority: str
+    status: str
+    distance_meters: Optional[float] = None
+    similarity: float
+
+class SubscriptionCreate(BaseModel):
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+

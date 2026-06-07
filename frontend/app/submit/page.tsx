@@ -24,6 +24,18 @@ export default function SubmitPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Duplicate check state
+  const [duplicateMatches, setDuplicateMatches] = useState<any[]>([]);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [duplicateBypassed, setDuplicateBypassed] = useState(false);
+
+  // Subscription state
+  const [subscribingGrievanceId, setSubscribingGrievanceId] = useState<number | null>(null);
+  const [subscribingEmail, setSubscribingEmail] = useState("");
+  const [subscribingPhone, setSubscribingPhone] = useState("");
+  const [subSuccess, setSubSuccess] = useState(false);
+  const [submittingSubscription, setSubmittingSubscription] = useState(false);
+
   // Profile data & anonymous submission option
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -266,14 +278,7 @@ export default function SubmitPage() {
     }
   };
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-
-    if (!form.title || !form.description) {
-      setError("Please enter a Title and Description for your grievance");
-      return;
-    }
-
+  const performSubmission = async () => {
     setLoading(true);
     setError("");
 
@@ -324,6 +329,7 @@ export default function SubmitPage() {
           name: isAnonymous ? null : form.name || null,
           email: isAnonymous ? null : form.email || null,
           phone: isAnonymous ? null : form.phone || null,
+          attachment_url,
           latitude: coords.latitude,
           longitude: coords.longitude,
         }),
@@ -340,6 +346,94 @@ export default function SubmitPage() {
       setError("Failed to connect to backend server");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+
+    if (!form.title || !form.description) {
+      setError("Please enter a Title and Description for your grievance");
+      return;
+    }
+
+    // Run duplicate check if not bypassed
+    if (!duplicateBypassed) {
+      setLoading(true);
+      setError("");
+      try {
+        const dupRes = await fetch("http://127.0.0.1:8000/grievances/detect-duplicates", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: form.title,
+            description: form.description,
+            category: form.category || "Other",
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          }),
+        });
+
+        if (dupRes.ok) {
+          const dupMatches = await dupRes.json();
+          if (dupMatches && dupMatches.length > 0) {
+            setDuplicateMatches(dupMatches);
+            setShowDuplicateWarning(true);
+            setLoading(false);
+            return; // STOP submission, show warning drawer/modal
+          }
+        }
+      } catch (err) {
+        console.error("Duplicate check failed", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    await performSubmission();
+  };
+
+  const handleBypassSubmit = async () => {
+    setDuplicateBypassed(true);
+    setShowDuplicateWarning(false);
+    await performSubmission();
+  };
+
+  const handleSubscribe = async () => {
+    if (!subscribingGrievanceId) return;
+    setSubmittingSubscription(true);
+    setError("");
+
+    const token = localStorage.getItem("token");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/grievance/${subscribingGrievanceId}/subscribe`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          email: subscribingEmail || null,
+          phone: subscribingPhone || null,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSubSuccess(true);
+      } else {
+        setError(data.detail || "Failed to subscribe to updates.");
+      }
+    } catch (err) {
+      setError("Failed to connect to backend server");
+    } finally {
+      setSubmittingSubscription(false);
     }
   };
 
@@ -688,6 +782,151 @@ export default function SubmitPage() {
           </form>
         )}
       </div>
+      {/* Duplicate Warning Dialog / Modal */}
+      {showDuplicateWarning && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 animate-fadeIn p-4 text-left">
+          <div className="bg-bg-secondary border border-border-custom p-6 rounded-2xl max-w-2xl w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            
+            {!subSuccess ? (
+              <>
+                <div className="border-b border-border-custom pb-4">
+                  <h3 className="text-xl font-bold text-yellow-500 flex items-center gap-2">
+                    ⚠️ Potential Duplicate Detected
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-1">
+                    A highly similar issue has already been reported nearby. Please check if this matches your concern to help avoid duplicate records.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {duplicateMatches.map((match) => (
+                    <div 
+                      key={match.id} 
+                      className="p-4 bg-bg-primary rounded-xl border border-border-custom text-sm space-y-3"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <strong className="text-text-primary text-base font-semibold">
+                            {match.title}
+                          </strong>
+                          <p className="text-[10px] text-text-secondary mt-0.5">
+                            Category: {match.category} | Priority: {match.priority} | Status: <span className="text-accent-primary font-semibold">{match.status}</span>
+                          </p>
+                        </div>
+                        {match.distance_meters !== null && (
+                          <span className="text-[10px] bg-green-500/10 text-green-400 font-semibold px-2 py-0.5 rounded border border-green-500/20">
+                            📍 {Math.round(match.distance_meters)}m away
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-secondary leading-relaxed line-clamp-3">
+                        {match.description}
+                      </p>
+
+                      {subscribingGrievanceId !== match.id ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSubscribingGrievanceId(match.id);
+                            setSubscribingEmail(form.email || "");
+                            setSubscribingPhone(form.phone || "");
+                          }}
+                          className="w-full py-2 bg-accent-primary/20 hover:bg-accent-primary/30 text-accent-primary text-xs font-semibold rounded-lg transition cursor-pointer"
+                        >
+                          🕒 Subscribe to updates for this issue
+                        </button>
+                      ) : (
+                        <div className="bg-bg-input border border-border-custom p-3.5 rounded-xl space-y-3 animate-slideDown">
+                          <p className="text-xs font-semibold text-text-primary">
+                            Subscribe to alerts on resolving Grievance #{match.id}:
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                              type="email"
+                              placeholder="Email Address"
+                              value={subscribingEmail}
+                              onChange={(e) => setSubscribingEmail(e.target.value)}
+                              className="bg-bg-secondary border border-border-custom rounded-lg px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent-primary"
+                            />
+                            <input
+                              type="tel"
+                              placeholder="Phone Number"
+                              value={subscribingPhone}
+                              onChange={(e) => setSubscribingPhone(e.target.value)}
+                              className="bg-bg-secondary border border-border-custom rounded-lg px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent-primary"
+                            />
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setSubscribingGrievanceId(null)}
+                              className="px-3 py-1.5 rounded-lg border border-border-custom text-text-secondary hover:text-text-primary text-xs transition cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSubscribe}
+                              disabled={submittingSubscription}
+                              className="px-3 py-1.5 bg-accent-primary text-white rounded-lg text-xs font-semibold hover:bg-accent-hover transition cursor-pointer disabled:opacity-50"
+                            >
+                              {submittingSubscription ? "Subscribing..." : "Confirm Watch Alert"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3 pt-2 justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowDuplicateWarning(false)}
+                    className="text-xs text-text-secondary hover:text-text-primary transition underline cursor-pointer bg-transparent border-none"
+                  >
+                    Go back and edit draft
+                  </button>
+                  <div className="flex gap-3 w-full md:w-auto">
+                    <button
+                      type="button"
+                      onClick={handleBypassSubmit}
+                      className="flex-1 md:flex-none px-4 py-2 border border-border-custom rounded-xl text-text-primary hover:bg-bg-input text-xs font-semibold transition cursor-pointer"
+                    >
+                      Submit Anyway
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-6 space-y-4 animate-fadeIn">
+                <div className="text-4xl text-green-400 font-bold">✓</div>
+                <h3 className="text-xl font-bold text-text-primary">
+                  Subscribed to Grievance Updates
+                </h3>
+                <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
+                  You are now watching this local issue. You will receive notifications via SMS, WhatsApp, and email when it is updated or resolved.
+                </p>
+                <div className="pt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDuplicateWarning(false);
+                      setSubSuccess(false);
+                      setSubscribingGrievanceId(null);
+                      window.location.href = "/dashboard";
+                    }}
+                    className="px-6 py-2.5 bg-accent-primary text-white rounded-xl text-sm font-semibold hover:bg-accent-hover transition cursor-pointer hover:scale-105 shadow-md shadow-accent-primary/20"
+                  >
+                    Go to Dashboard
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

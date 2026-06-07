@@ -36,6 +36,7 @@ class Grievance(Base):
 
     # Relationships
     timeline = relationship("GrievanceTimeline", back_populates="grievance", cascade="all, delete-orphan", order_by="GrievanceTimeline.created_at.asc()")
+    subscriptions = relationship("GrievanceSubscription", back_populates="grievance", cascade="all, delete-orphan")
 
 class GrievanceTimeline(Base):
     __tablename__ = "grievance_timelines"
@@ -50,4 +51,18 @@ class GrievanceTimeline(Base):
     # Relationships
     grievance = relationship("Grievance", back_populates="timeline")
     actor = relationship("User")
+
+class GrievanceSubscription(Base):
+    __tablename__ = "grievance_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    grievance_id = Column(Integer, ForeignKey("grievances.id", ondelete="CASCADE"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    email = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    grievance = relationship("Grievance", back_populates="subscriptions")
+    user = relationship("User")
 
