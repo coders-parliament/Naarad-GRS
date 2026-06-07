@@ -35,6 +35,36 @@ export default function SubmitPage() {
   // File preview & compression state
   const [filePreview, setFilePreview] = useState<string | null>(null);
 
+  // GPS Location state
+  const [coords, setCoords] = useState<{ latitude: number | null; longitude: number | null }>({
+    latitude: null,
+    longitude: null,
+  });
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+    setFetchingLocation(true);
+    setLocationError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setFetchingLocation(false);
+      },
+      (err) => {
+        setLocationError("Could not retrieve location. Please check browser permissions.");
+        setFetchingLocation(false);
+      }
+    );
+  };
+
   // Revoke object URL on unmount to avoid memory leaks
   useEffect(() => {
     return () => {
@@ -294,6 +324,8 @@ export default function SubmitPage() {
           name: isAnonymous ? null : form.name || null,
           email: isAnonymous ? null : form.email || null,
           phone: isAnonymous ? null : form.phone || null,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
         }),
       });
 
@@ -388,6 +420,8 @@ export default function SubmitPage() {
                   setForm({ name: "", email: "", phone: "", category: "", title: "", description: "" });
                   setAiPreview(null);
                   handleRemoveFile();
+                  setCoords({ latitude: null, longitude: null });
+                  setLocationError("");
                   setSubmitted(false);
                 }}
               >
@@ -505,6 +539,46 @@ export default function SubmitPage() {
                 placeholder="Describe your issue with locations, timestamps, and severity details..."
                 className="w-full p-3 rounded-lg bg-bg-input text-text-primary border border-border-custom placeholder-text-secondary/40 focus:outline-none focus:ring-2 focus:ring-accent-primary transition duration-200"
               />
+            </div>
+
+            {/* GPS Location Capture */}
+            <div className="p-4 bg-bg-input border border-border-custom rounded-xl space-y-3">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div>
+                  <h3 className="text-xs text-text-secondary font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    📍 Grievance GPS Location
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Sharing your precise location speeds up routing to field engineers.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchLocation}
+                  disabled={fetchingLocation}
+                  className="bg-accent-primary text-white text-xs px-4 py-2 rounded-lg hover:bg-accent-hover transition font-medium cursor-pointer disabled:opacity-50 animate-pulse"
+                >
+                  {fetchingLocation ? "Locating..." : coords.latitude ? "🔄 Update Location" : "📍 Get GPS Location"}
+                </button>
+              </div>
+
+              {locationError && (
+                <p className="text-xs text-red-400 font-semibold">{locationError}</p>
+              )}
+
+              {coords.latitude && coords.longitude && (
+                <div className="p-2.5 bg-bg-primary rounded-lg border border-green-500/20 text-xs text-green-400 font-semibold flex items-center justify-between gap-3 animate-fadeIn">
+                  <span>✅ Location captured: {coords.latitude.toFixed(6)}, {coords.longitude.toFixed(6)}</span>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${coords.latitude},${coords.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] bg-green-500/10 hover:bg-green-500/25 px-2 py-1 rounded transition border border-green-500/20"
+                  >
+                    View on Maps
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* AI Action Panel */}

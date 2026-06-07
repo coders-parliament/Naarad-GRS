@@ -189,7 +189,9 @@ def create_grievance(
         email=grievance.email,
         phone=grievance.phone,
         user_id=user_id,
-        attachment_url=grievance.attachment_url
+        attachment_url=grievance.attachment_url,
+        latitude=grievance.latitude,
+        longitude=grievance.longitude
     )
 
     db.add(new_grievance)

@@ -452,7 +452,19 @@ export default function AdminDashboard() {
                     <div key={g.id} className="p-3 bg-bg-primary rounded-xl border border-border-custom flex justify-between items-center text-xs hover:border-accent-primary transition">
                       <div className="space-y-1">
                         <p className="font-semibold text-text-primary">#{g.id} - {g.title}</p>
-                        <p className="text-text-secondary font-medium">Category: <span className="text-accent-primary">{g.category}</span></p>
+                        <p className="text-text-secondary font-medium">
+                          Category: <span className="text-accent-primary">{g.category}</span>
+                          {g.latitude && g.longitude && (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${g.latitude},${g.longitude}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] text-green-400 hover:underline font-semibold ml-3"
+                            >
+                              📍 GPS Location
+                            </a>
+                          )}
+                        </p>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
@@ -526,6 +538,16 @@ export default function AdminDashboard() {
                           className="inline-block text-[10px] text-accent-primary hover:underline font-semibold mt-1"
                         >
                           📎 View Attachment
+                        </a>
+                      )}
+                      {g.latitude && g.longitude && (
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${g.latitude},${g.longitude}`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className={`inline-block text-[10px] text-green-400 hover:underline font-semibold mt-1 ${g.attachment_url ? 'ml-3' : ''}`}
+                        >
+                          📍 GPS Location
                         </a>
                       )}
                     </td>

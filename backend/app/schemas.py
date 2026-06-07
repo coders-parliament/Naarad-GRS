@@ -38,6 +38,8 @@ class GrievanceCreate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     attachment_url: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class GrievanceUpdate(BaseModel):
     title: Optional[str] = None
@@ -59,6 +61,8 @@ class GrievanceOut(BaseModel):
     phone: Optional[str] = None
     user_id: Optional[int] = None
     attachment_url: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     created_at: datetime
 
     class Config:
