@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class UserCreate(BaseModel):
@@ -48,6 +48,18 @@ class GrievanceUpdate(BaseModel):
     priority: Optional[str] = None
     status: Optional[str] = None
     attachment_url: Optional[str] = None
+    remarks: Optional[str] = None
+
+class GrievanceTimelineOut(BaseModel):
+    id: int
+    grievance_id: int
+    status: str
+    remarks: Optional[str] = None
+    action_by: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class GrievanceOut(BaseModel):
     id: int
@@ -64,6 +76,8 @@ class GrievanceOut(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     created_at: datetime
+    timeline: List[GrievanceTimelineOut] = []
 
     class Config:
         from_attributes = True
+

@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
+from sqlalchemy.orm import relationship
 from backend.app.database import Base
 from datetime import datetime
 
@@ -32,3 +33,21 @@ class Grievance(Base):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    timeline = relationship("GrievanceTimeline", back_populates="grievance", cascade="all, delete-orphan", order_by="GrievanceTimeline.created_at.asc()")
+
+class GrievanceTimeline(Base):
+    __tablename__ = "grievance_timelines"
+
+    id = Column(Integer, primary_key=True, index=True)
+    grievance_id = Column(Integer, ForeignKey("grievances.id", ondelete="CASCADE"))
+    status = Column(String)
+    remarks = Column(String, nullable=True)
+    action_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    grievance = relationship("Grievance", back_populates="timeline")
+    actor = relationship("User")
+

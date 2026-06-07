@@ -197,6 +197,18 @@ def create_grievance(
     db.add(new_grievance)
     db.commit()
     db.refresh(new_grievance)
+
+    # Create initial timeline entry
+    initial_log = models.GrievanceTimeline(
+        grievance_id=new_grievance.id,
+        status="Pending",
+        remarks="Grievance submitted successfully. AI auto-assigned category and priority.",
+        action_by=user_id
+    )
+    db.add(initial_log)
+    db.commit()
+    db.refresh(new_grievance)
+
     return new_grievance
 
 # GET ALL GRIEVANCES (ADMIN ONLY)
@@ -234,11 +246,31 @@ def update_grievance(
     # Update fields
     old_status = grievance.status
     update_data = grievance_update.dict(exclude_unset=True)
+    custom_remarks = update_data.pop("remarks", None)
+
     for key, value in update_data.items():
         setattr(grievance, key, value)
 
     db.commit()
     db.refresh(grievance)
+
+    # Check if a timeline entry needs to be created
+    status_changed = "status" in update_data and update_data["status"] != old_status
+
+    if status_changed or custom_remarks:
+        remarks = custom_remarks
+        if not remarks:
+            remarks = f"Status updated to '{grievance.status}'."
+
+        timeline_entry = models.GrievanceTimeline(
+            grievance_id=grievance.id,
+            status=grievance.status,
+            remarks=remarks,
+            action_by=current_user.id
+        )
+        db.add(timeline_entry)
+        db.commit()
+        db.refresh(grievance)
 
     # Check for status changes and send updates to citizen
     if "status" in update_data and update_data["status"] != old_status:

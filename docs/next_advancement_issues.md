@@ -1,85 +1,13 @@
-# Planned Issues for Next Advancements
+# Planned Issues for Next Advancements (Version 2)
 
 This document specifies the technical design, requirements, and task breakdowns for the next high-priority issues/features in Naarad-GRS.
 
 ---
 
-## 🎫 Issue 1: Implement File & Image Attachment Uploads for Grievances
+## 🎫 Issue 1: Step-by-Step Grievance Timeline and Audit Logging
 
 ### Description
-Citizens need to attach photographic or document evidence (e.g., photos of a water leak or broken road) when submitting grievances. The frontend has a visual file input, but the backend and schema do not support storing or serving attachments.
-
-### Proposed Changes
-
-#### 1. Backend Database Model
-Modify [models.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/app/models.py) to add an optional `attachment_url` column to the `Grievance` table:
-```python
-class Grievance(Base):
-    # ... existing fields ...
-    attachment_url = Column(String, nullable=True)
-```
-
-#### 2. Backend Schemas
-Update [schemas.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/app/schemas.py) to include `attachment_url` in both input and output:
-- `GrievanceCreate` (optional field)
-- `GrievanceOut`
-- `GrievanceUpdate`
-
-#### 3. Upload API Endpoint
-Create a directory `backend/static/uploads/` to store uploaded files. In [main.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/main.py):
-- Mount a static files helper: `app.mount("/static", StaticFiles(directory="backend/static"), name="static")`
-- Add a new endpoint `POST /upload`:
-  ```python
-  from fastapi import UploadFile, File
-  import shutil
-  import uuid
-  
-  @app.post("/upload")
-  def upload_file(file: UploadFile = File(...)):
-      ext = file.filename.split(".")[-1]
-      unique_name = f"{uuid.uuid4()}.{ext}"
-      file_path = f"backend/static/uploads/{unique_name}"
-      
-      with open(file_path, "wb") as buffer:
-          shutil.copyfileobj(file.file, buffer)
-          
-      return {"url": f"http://127.0.0.1:8000/static/uploads/{unique_name}"}
-  ```
-
-#### 4. Frontend Integration
-Modify [SubmitPage (page.tsx)](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/frontend/app/submit/page.tsx) to:
-- Handle the file input state.
-- Upload the file to `POST /upload` before form submission.
-- Attach the returned URL to the grievance submission payload.
-
----
-
-## 🎫 Issue 2: Audio Recording and Voice-to-Text Integration (ASR)
-
-### Description
-To support accessibility for citizens with limited literacy or motor impairments, the system needs speech-based grievance submission. Whisper ASR is part of the technology stack but currently unused.
-
-### Proposed Changes
-
-#### 1. Backend Transcription API
-Add a new endpoint `POST /audio/transcribe` in [main.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/main.py) which:
-- Accepts a binary audio stream/file (WebM, WAV, or MP3).
-- Uses the HuggingFace Whisper pipeline or a local speech recognition module to transcribe the audio text.
-- Returns the transcribed text: `{"text": "transcribed description here"}`.
-
-#### 2. Frontend Voice Record Button
-Modify [SubmitPage (page.tsx)](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/frontend/app/submit/page.tsx):
-- Add a microphone icon button next to the Description field.
-- Implement the browser MediaRecorder API to record user speech.
-- Display a real-time recording timer and waveform/active mic indicator.
-- Send the audio blob to the backend transcription endpoint and populate the Description text area.
-
----
-
-## 🎫 Issue 3: Step-by-Step Grievance Timeline and Audit Logging
-
-### Description
-Citizens want transparent updates showing who handled their complaint and when. Currently, only a single global `status` exists on the Grievance model. We need a timeline of administrative actions.
+Citizens want transparent updates showing who handled their complaint, what steps were taken, and when status updates occurred. Currently, only a single global `status` exists on the `Grievance` model, and there is no record of individual administrative updates or remarks.
 
 ### Proposed Changes
 
@@ -90,16 +18,104 @@ class GrievanceTimeline(Base):
     __tablename__ = "grievance_timelines"
 
     id = Column(Integer, primary_key=True, index=True)
-    grievance_id = Column(Integer, ForeignKey("grievances.id"))
-    status = Column(String)  # e.g., Pending, In Progress, Resolved, Rejected
+    grievance_id = Column(Integer, ForeignKey("grievances.id", ondelete="CASCADE"))
+    status = Column(String)  # e.g., Pending, In Progress, Resolved, Reopened, Rejected
     remarks = Column(String, nullable=True)  # Admin feedback/notes
-    action_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    action_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # Admin user ID
     created_at = Column(DateTime, default=datetime.utcnow)
 ```
 
-#### 2. Automatic Logging Hook
-Update the grievance status-updating endpoint `PUT /grievance/{id}` in [main.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/main.py):
-- Automatically append a new `GrievanceTimeline` record whenever a status change or remark update occurs.
+#### 2. Backend Schemas & Serialization
+Update [schemas.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/app/schemas.py):
+* Add a `GrievanceTimelineOut` Pydantic schema:
+  ```python
+  class GrievanceTimelineOut(BaseModel):
+      id: int
+      status: str
+      remarks: Optional[str] = None
+      action_by: Optional[int] = None
+      created_at: datetime
 
-#### 3. Frontend Timeline Tracker
-Display an interactive horizontal or vertical timeline (e.g. progress bar checkpoints) on the tracking/dashboard detail view showing all historic remarks and updates.
+      class Config:
+          orm_mode = True
+  ```
+* Update `GrievanceOut` to include a list of timeline events:
+  ```python
+  class GrievanceOut(GrievanceBase):
+      id: int
+      status: str
+      created_at: datetime
+      timeline: List[GrievanceTimelineOut] = []
+  ```
+
+#### 3. Automatic Audit Logging Hooks
+Modify the status-updating endpoint `PUT /grievances/{id}/status` in [main.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/main.py):
+* Whenever an administrator or departmental official updates the status or adds comments, append a new `GrievanceTimeline` record to the database.
+* Ensure a default `GrievanceTimeline` record of "Submitted" is created when the grievance is first filed.
+
+#### 4. Frontend Interactive Timeline UI
+* **Citizen View:** Update the tracking page (`/dashboard` or `/submit` receipt page) to render a clean vertical checkpoint stepper showing status progress, dates, and administrative remarks.
+* **Admin View:** Render the historic logs inside the Grievance detail modal/drawer so other admins can review past actions before making updates.
+
+---
+
+## 🎫 Issue 2: Citizen Feedback, Rating, and Grievance Re-opening
+
+### Description
+To ensure high-quality civic service delivery, citizens must be able to rate the resolution of their grievances. If a resolution is unsatisfactory, they should have the right to reopen the grievance within a set timeframe (e.g., 7 days) rather than submitting a brand-new complaint.
+
+### Proposed Changes
+
+#### 1. Database Model Updates
+Modify the `Grievance` model in [models.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/app/models.py) to include feedback fields:
+```python
+class Grievance(Base):
+    # ... existing fields ...
+    rating = Column(Integer, nullable=True)  # 1 to 5 stars
+    feedback = Column(String, nullable=True)  # Text feedback
+    reopened_count = Column(Integer, default=0)
+```
+
+#### 2. Feedback and Reopen Endpoints
+Add new endpoints in [main.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/main.py):
+* `POST /grievances/{id}/feedback`
+  * Validates that the grievance status is `Resolved`.
+  * Saves the user's rating (1–5) and optional text review.
+* `POST /grievances/{id}/reopen`
+  * Validates that the grievance status is `Resolved` and that the resolution was within the last 7 days.
+  * Resets the status to `Reopened`, increments `reopened_count`, and appends a `Reopened` timeline event log.
+
+#### 3. Frontend Rating & Re-opening Interface
+* Update the Citizen Dashboard (`frontend/app/dashboard/page.tsx`):
+  * For grievances in `Resolved` state, render a dynamic rating widget (using interactive SVG stars) and a feedback textarea.
+  * If a citizen rates the grievance low (e.g., 1 or 2 stars), display a prominent **"Reopen Complaint"** button next to it.
+  * On clicking "Reopen", request the user to provide a reason, send it to the backend, and refresh the dashboard view to display the updated state.
+
+---
+
+## 🎫 Issue 3: AI-Powered Duplicate Grievance Detection
+
+### Description
+In civic administrations, multiple citizens often report the exact same issue (e.g., the same pothole on a main street or a local water pipe burst). This results in duplicated workflows for officials. We should detect duplicates during submission and let citizens "upvote" or "subscribe" to existing reports instead.
+
+### Proposed Changes
+
+#### 1. Backend Duplicate Detection API
+Add a new endpoint `POST /grievances/detect-duplicates` in [main.py](file:///c:/Users/ACER/OneDrive/Desktop/Naarad-GRS/backend/main.py):
+* Accepts the title, category, description, and GPS coordinates (latitude/longitude) of the new submission.
+* Queries active/open grievances in the database within the same category.
+* Uses spatial filtering (e.g., within 200 meters) combined with text similarity (using TF-IDF or the existing AI classification pipeline) to find matches.
+* Returns a list of potential duplicates: `{"duplicates": [{"id": 1, "title": "...", "distance_meters": 45, "similarity": 0.85}]}`.
+
+#### 2. "Watch / Subscribe" Endpoint
+Add a subscription model or field mapping to allow citizens to register their interest in an existing grievance:
+* Citizens who subscribe to an existing grievance will receive notification alerts (email/SMS) when that issue is resolved, avoiding the need to submit another ticket.
+
+#### 3. Frontend Suggestion Widget
+* Update the Grievance Submission Form (`frontend/app/submit/page.tsx`):
+  * When the user finishes typing their description and locks their GPS location, trigger an asynchronous check to `POST /grievances/detect-duplicates`.
+  * If highly matching duplicates are found, show an elegant prompt panel:
+    > 🔍 **Similar issue reported nearby!**
+    > "Water leak at Block B lane corner" was reported 50m away and is currently **In Progress**.
+    >
+    > **[Subscribe to Updates]** instead of filing a new ticket, or **[Submit Anyway]** if yours is different.

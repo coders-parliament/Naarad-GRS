@@ -1,4 +1,13 @@
+import { useState } from "react";
 import StatusBadge from "./StatusTag";
+
+type TimelineEvent = {
+  id: number;
+  status: string;
+  remarks?: string | null;
+  action_by?: number | null;
+  created_at: string;
+};
 
 type Props = {
   grievance: {
@@ -11,10 +20,12 @@ type Props = {
     created_at: string;
     name?: string | null;
     email?: string | null;
+    timeline?: TimelineEvent[];
   };
 };
 
 export default function GrievanceCard({ grievance }: Props) {
+  const [showTimeline, setShowTimeline] = useState(false);
   const formattedDate = new Date(grievance.created_at).toLocaleDateString("en-IN", {
     year: "numeric",
     month: "short",
@@ -175,6 +186,71 @@ export default function GrievanceCard({ grievance }: Props) {
           </a>
         </div>
       )}
+
+      {/* Collapsible Timeline Action Log */}
+      <div className="border-t border-border-custom pt-4">
+        <button
+          onClick={() => setShowTimeline(!showTimeline)}
+          className="flex items-center gap-2 text-xs font-semibold text-accent-primary hover:text-accent-hover transition cursor-pointer select-none"
+        >
+          <span>🕒</span>
+          <span>
+            {showTimeline ? "Hide History Log" : `View History Log (${grievance.timeline?.length || 1})`}
+          </span>
+          <span className={`transform transition-transform duration-200 text-[9px] ${showTimeline ? "rotate-180" : ""}`}>
+            ▼
+          </span>
+        </button>
+
+        {showTimeline && (
+          <div className="mt-4 pl-2 space-y-4 border-l border-border-custom ml-1.5 animate-fadeIn">
+            {(grievance.timeline && grievance.timeline.length > 0 ? grievance.timeline : [
+              {
+                id: 0,
+                status: "Pending",
+                remarks: "Grievance submitted successfully. AI auto-assigned category and priority.",
+                created_at: grievance.created_at
+              }
+            ]).map((event, index) => {
+              const eventDate = new Date(event.created_at).toLocaleString("en-IN", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              });
+              return (
+                <div key={event.id || index} className="relative pl-6 pb-2 last:pb-0">
+                  {/* Bullet point indicator */}
+                  <span className="absolute -left-[6px] top-1.5 w-2.5 h-2.5 rounded-full border border-bg-secondary bg-accent-primary shadow-sm"></span>
+                  
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-xs text-text-primary">
+                        {event.status}
+                      </span>
+                      <span className="text-[10px] text-text-secondary">
+                        {eventDate}
+                      </span>
+                    </div>
+                    {event.remarks && (
+                      <p className="text-xs text-text-secondary leading-relaxed bg-bg-primary/50 p-2.5 rounded-lg border border-border-custom/50 mt-0.5">
+                        {event.remarks}
+                      </p>
+                    )}
+                    {event.action_by ? (
+                      <span className="text-[9px] text-text-secondary font-medium">
+                        Action by: Department Official
+                      </span>
+                    ) : (
+                      <span className="text-[9px] text-text-secondary italic">
+                        Action by: System
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Footer Info */}
       <div className="flex justify-between items-center text-xs text-text-secondary mt-1">

@@ -10,6 +10,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [remarksModalOpen, setRemarksModalOpen] = useState(false);
+  const [selectedGrievanceId, setSelectedGrievanceId] = useState<number | null>(null);
+  const [pendingNewStatus, setPendingNewStatus] = useState<string>("");
+  const [adminRemarks, setAdminRemarks] = useState<string>("");
 
   // Active view tab: "list" or "analytics"
   const [activeTab, setActiveTab] = useState<"list" | "analytics">("analytics");
@@ -43,25 +47,35 @@ export default function AdminDashboard() {
     fetchAllGrievances();
   }, [user, authLoading]);
 
-  const handleStatusChange = async (id: number, newStatus: string) => {
-    setUpdatingId(id);
+  const openRemarksModal = (id: number, newStatus: string) => {
+    setSelectedGrievanceId(id);
+    setPendingNewStatus(newStatus);
+    setAdminRemarks("");
+    setRemarksModalOpen(true);
+  };
+
+  const submitStatusChange = async () => {
+    if (selectedGrievanceId === null) return;
+    setUpdatingId(selectedGrievanceId);
+    setRemarksModalOpen(false);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://127.0.0.1:8000/grievance/${id}`, {
+      const res = await fetch(`http://127.0.0.1:8000/grievance/${selectedGrievanceId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
-          status: newStatus,
+          status: pendingNewStatus,
+          remarks: adminRemarks.trim() || undefined,
         }),
       });
 
       if (res.ok) {
         // Update local state
         setGrievances((prev) =>
-          prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
+          prev.map((g) => (g.id === selectedGrievanceId ? { ...g, status: pendingNewStatus } : g))
         );
       } else {
         alert("Failed to update grievance status.");
@@ -70,6 +84,7 @@ export default function AdminDashboard() {
       alert("Network error. Could not update status.");
     } finally {
       setUpdatingId(null);
+      setSelectedGrievanceId(null);
     }
   };
 
@@ -574,7 +589,7 @@ export default function AdminDashboard() {
                       <select
                         value={g.status}
                         disabled={updatingId === g.id}
-                        onChange={(e) => handleStatusChange(g.id, e.target.value)}
+                        onChange={(e) => openRemarksModal(g.id, e.target.value)}
                         className="bg-bg-input border border-border-custom rounded px-2.5 py-1 text-xs text-text-primary outline-none focus:ring-1 focus:ring-accent-primary cursor-pointer disabled:opacity-50"
                       >
                         <option value="Pending">Pending</option>
@@ -587,6 +602,56 @@ export default function AdminDashboard() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Admin Remarks Modal */}
+      {remarksModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 animate-fadeIn">
+          <div className="bg-bg-secondary border border-border-custom p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex justify-between items-center border-b border-border-custom pb-3">
+              <h3 className="text-lg font-bold text-text-primary">
+                Update Grievance Status
+              </h3>
+              <button
+                onClick={() => setRemarksModalOpen(false)}
+                className="text-text-secondary hover:text-text-primary cursor-pointer border-none bg-transparent text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-2 text-sm">
+              <p className="text-text-secondary">
+                You are changing the status to <span className="font-semibold text-accent-primary">{pendingNewStatus}</span>.
+              </p>
+              <label className="block text-xs font-semibold text-text-primary uppercase tracking-wider mt-4">
+                Remarks / Comments (Optional)
+              </label>
+              <textarea
+                value={adminRemarks}
+                onChange={(e) => setAdminRemarks(e.target.value)}
+                placeholder="Enter work updates, notes or explanation for this status change..."
+                className="w-full h-24 bg-bg-input border border-border-custom rounded-xl p-3 text-sm text-text-primary outline-none focus:border-accent-primary resize-none placeholder-text-secondary/60"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setRemarksModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-border-custom text-text-primary hover:bg-bg-input transition cursor-pointer text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitStatusChange}
+                disabled={updatingId !== null}
+                className="px-4 py-2 bg-accent-primary hover:bg-accent-hover text-white rounded-xl transition cursor-pointer text-xs font-semibold hover:scale-105 shadow-md shadow-accent-primary/20 disabled:opacity-50"
+              >
+                Save Status Update
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
