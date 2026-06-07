@@ -158,7 +158,61 @@ def test_all():
     except HTTPException as e:
         print("Unauthorized update attempt blocked:", e.detail)
         assert e.status_code == 403
-        
+
+    print("\n--- 7. Testing AI-Powered Duplicate Detection & Watch Subscriptions ---")
+    # Reset g1 to Pending and set mock GPS coordinates for duplicate spatial testing
+    g1.status = "Pending"
+    g1.latitude = 19.0760
+    g1.longitude = 72.8770
+    db.commit()
+    db.refresh(g1)
+
+    # Test duplicate detection with matching categories, coordinates, and high similarity descriptions
+    matching_req = schemas.DuplicateDetectRequest(
+        title="Water line flooding main road",
+        description="A major water line has burst on main road, causing flooding near Sector 4.",
+        category="Water",
+        latitude=19.0761,  # extremely close to g1 (~15 meters)
+        longitude=72.8771
+    )
+
+    duplicates = main.detect_duplicates(matching_req, db=db)
+    print("Detected duplicates count:", len(duplicates))
+    assert len(duplicates) == 1
+    assert duplicates[0].id == g1.id
+    assert duplicates[0].similarity > 0.45
+    print(f"Match verified: Similarity={duplicates[0].similarity:.2f}, Distance={duplicates[0].distance_meters:.2f} meters")
+
+    # Test spatial filter (matching text but coordinates far away)
+    far_req = schemas.DuplicateDetectRequest(
+        title="Water line flooding main road",
+        description="A major water line has burst on main road, causing flooding near Sector 4.",
+        category="Water",
+        latitude=28.6139,  # Delhi vs Mumbai (far apart)
+        longitude=77.2090
+    )
+    duplicates_far = main.detect_duplicates(far_req, db=db)
+    print("Detected duplicates far away:", len(duplicates_far))
+    assert len(duplicates_far) == 0  # Should be excluded because it exceeds 200m spatial threshold
+
+    # Test watch subscription creation
+    sub_req = schemas.SubscriptionCreate(email="subscriber@example.com", phone="+919876543210")
+    sub_res = main.subscribe_to_grievance(g1.id, sub_req, authorization=None, db=db)
+    print("Subscription response:", sub_res)
+    assert sub_res["message"] == "Subscribed successfully to updates."
+
+    # Test duplicate subscription prevention
+    sub_res_dup = main.subscribe_to_grievance(g1.id, sub_req, authorization=None, db=db)
+    print("Duplicate subscription check:", sub_res_dup)
+    assert "already subscribed" in sub_res_dup["message"]
+
+    print("\n--- 8. Testing Subscriber Status Change Dispatch ---")
+    update_schema = schemas.GrievanceUpdate(status="Resolved", remarks="Pipe repaired successfully by field engineers.")
+    
+    # Triggering the update will print mock SMS/email notifications for subscribers
+    g1_resolved = main.update_grievance(g1.id, update_schema, current_user=admin_user, db=db)
+    assert g1_resolved.status == "Resolved"
+    
     print("\nALL BACKEND TESTS PASSED SUCCESSFULLY!")
     
 if __name__ == "__main__":

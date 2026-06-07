@@ -284,6 +284,7 @@ def update_grievance(
         
         try:
             from backend.app.notifications import NotificationService
+            # Notify owner
             NotificationService.send_status_update(
                 grievance=grievance,
                 old_status=old_status,
@@ -291,6 +292,27 @@ def update_grievance(
                 owner_email=owner_email,
                 owner_phone=owner_phone
             )
+            
+            # Notify subscribers
+            for sub in grievance.subscriptions:
+                sub_email = sub.email
+                sub_phone = sub.phone
+                if sub.user_id:
+                    sub_user = db.query(models.User).filter(models.User.id == sub.user_id).first()
+                    if sub_user:
+                        sub_email = sub_email or sub_user.email
+                        sub_phone = sub_phone or sub_user.phone
+                
+                if sub_email:
+                    NotificationService.send_email(
+                        sub_email,
+                        f"Naarad-GRS Watch Alert: Grievance #{grievance.id} is '{grievance.status}'",
+                        f"Update on the Naarad-GRS Grievance #{grievance.id} ({grievance.title}) you are watching:\nThe status has been updated from '{old_status}' to '{grievance.status}'."
+                    )
+                if sub_phone:
+                    msg = f"Naarad-GRS Watch Alert: Grievance #{grievance.id} ({grievance.title}) status changed to '{grievance.status}'."
+                    NotificationService.send_sms(sub_phone, msg)
+                    NotificationService.send_whatsapp(sub_phone, msg)
         except Exception as e:
             # Prevent status update failing due to notification failure
             pass
@@ -341,3 +363,124 @@ def transcribe_voice(
         "filename": unique_filename,
         "url": f"http://127.0.0.1:8000/static/uploads/voice/{unique_filename}"
     }
+
+# DETECT DUPLICATE GRIEVANCES
+@app.post("/grievances/detect-duplicates", response_model=list[schemas.DuplicateMatchOut])
+def detect_duplicates(
+    payload: schemas.DuplicateDetectRequest,
+    db: Session = Depends(get_db)
+):
+    category = payload.category
+    if not category or category in ["Other", "Select category", "Select Category"]:
+        from backend.app.ai import analyze_grievance
+        ai_results = analyze_grievance(payload.title, payload.description)
+        category = ai_results.get("category", "Other")
+
+    # Fetch all open grievances in the same category
+    open_grievances = db.query(models.Grievance).filter(
+        models.Grievance.category == category,
+        models.Grievance.status != "Resolved"
+    ).all()
+
+    matches = []
+    from backend.app.ai import calculate_text_similarity, calculate_haversine_distance
+
+    for g in open_grievances:
+        title_similarity = calculate_text_similarity(payload.title, g.title)
+        desc_similarity = calculate_text_similarity(payload.description, g.description)
+        similarity = (title_similarity * 0.4) + (desc_similarity * 0.6)
+
+        distance = None
+        has_coords = (
+            payload.latitude is not None and payload.longitude is not None and
+            g.latitude is not None and g.longitude is not None
+        )
+        if has_coords:
+            distance = calculate_haversine_distance(
+                payload.latitude, payload.longitude,
+                g.latitude, g.longitude
+            )
+
+        is_match = False
+        if has_coords:
+            # Within 200m AND similarity >= 0.3
+            if distance < 200.0 and similarity >= 0.3:
+                is_match = True
+        else:
+            # Pure text similarity >= 0.45
+            if similarity >= 0.45:
+                is_match = True
+
+        if is_match:
+            matches.append(
+                schemas.DuplicateMatchOut(
+                    id=g.id,
+                    title=g.title,
+                    description=g.description,
+                    category=g.category,
+                    priority=g.priority,
+                    status=g.status,
+                    distance_meters=distance,
+                    similarity=similarity
+                )
+            )
+
+    matches.sort(key=lambda x: x.similarity, reverse=True)
+    return matches
+
+# SUBSCRIBE TO GRIEVANCE UPDATES
+@app.post("/grievance/{id}/subscribe")
+def subscribe_to_grievance(
+    id: int,
+    sub_data: schemas.SubscriptionCreate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    grievance = db.query(models.Grievance).filter(models.Grievance.id == id).first()
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+
+    user_id = None
+    email = sub_data.email
+    phone = sub_data.phone
+
+    if authorization:
+        try:
+            if authorization.startswith("Bearer "):
+                token = authorization.split(" ")[1]
+                payload = auth.decode_token(token)
+                if payload:
+                    user = db.query(models.User).filter(models.User.email == payload["sub"]).first()
+                    if user:
+                        user_id = user.id
+                        email = email or user.email
+                        phone = phone or user.phone
+        except Exception:
+            pass
+
+    if not user_id and not email and not phone:
+        raise HTTPException(status_code=400, detail="Either login, or provide an email/phone to subscribe.")
+
+    # Check if subscription already exists
+    existing = db.query(models.GrievanceSubscription).filter(
+        models.GrievanceSubscription.grievance_id == id,
+        (
+            (models.GrievanceSubscription.user_id == user_id) & (user_id != None) |
+            (models.GrievanceSubscription.email == email) & (email != None) |
+            (models.GrievanceSubscription.phone == phone) & (phone != None)
+        )
+    ).first()
+
+    if existing:
+        return {"message": "You are already subscribed to this grievance."}
+
+    new_sub = models.GrievanceSubscription(
+        grievance_id=id,
+        user_id=user_id,
+        email=email,
+        phone=phone
+    )
+    db.add(new_sub)
+    db.commit()
+
+    return {"message": "Subscribed successfully to updates."}

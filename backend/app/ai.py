@@ -156,3 +156,51 @@ def analyze_grievance(title: str, description: str) -> dict:
     if HAS_TRANSFORMERS:
         return get_hf_classification(title, description)
     return get_rule_based_classification(title, description)
+
+
+import math
+
+def calculate_text_similarity(text1: str, text2: str) -> float:
+    # Normalize and tokenize
+    words1 = set(re.findall(r"\w+", text1.lower()))
+    words2 = set(re.findall(r"\w+", text2.lower()))
+    
+    # Remove common English stop words to improve comparison quality
+    stopwords = {
+        "the", "a", "an", "and", "or", "but", "is", "are", "was", "were", "to", "of", "in", 
+        "on", "at", "for", "with", "about", "against", "between", "into", "through", "during", 
+        "before", "after", "above", "below", "from", "up", "down", "in", "out", "over", "under", 
+        "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", 
+        "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", 
+        "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", 
+        "should", "now", "i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", 
+        "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", 
+        "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves"
+    }
+    words1 = words1 - stopwords
+    words2 = words2 - stopwords
+    
+    if not words1 or not words2:
+        return 0.0
+        
+    intersection = words1.intersection(words2)
+    union = words1.union(words2)
+    
+    return len(intersection) / len(union)
+
+
+def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    # Earth radius in meters
+    R = 6371000.0
+    
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    
+    a = math.sin(delta_phi / 2.0) ** 2 + \
+        math.cos(phi1) * math.cos(phi2) * \
+        math.sin(delta_lambda / 2.0) ** 2
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+    
+    return R * c
