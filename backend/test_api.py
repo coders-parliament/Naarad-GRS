@@ -212,8 +212,51 @@ def test_all():
     # Triggering the update will print mock SMS/email notifications for subscribers
     g1_resolved = main.update_grievance(g1.id, update_schema, current_user=admin_user, db=db)
     assert g1_resolved.status == "Resolved"
+
+    print("\n--- 9. Testing Citizen Feedback & Rating ---")
+    # 1. Test feedback on unresolved grievance (should fail)
+    try:
+        main.submit_feedback(g2.id, schemas.GrievanceFeedback(rating=5, feedback="Great work"), db=db)
+        assert False, "Feedback should not be allowed on unresolved grievances"
+    except HTTPException as e:
+        print("Feedback rejection on unresolved grievance caught correctly:", e.detail)
+        assert e.status_code == 400
+
+    # 2. Test valid feedback on resolved grievance
+    fb_res = main.submit_feedback(g1.id, schemas.GrievanceFeedback(rating=1, feedback="Pothole was poorly filled."), db=db)
+    print("Feedback response:", fb_res)
+    assert fb_res["message"] == "Feedback submitted successfully."
+    
+    # Reload g1 and verify
+    db.refresh(g1)
+    assert g1.rating == 1
+    assert g1.feedback == "Pothole was poorly filled."
+
+    print("\n--- 10. Testing Grievance Re-opening ---")
+    # 3. Test reopening unresolved (should fail)
+    try:
+        main.reopen_grievance(g2.id, schemas.GrievanceReopen(remarks="Not resolved"), authorization=None, db=db)
+        assert False, "Only resolved grievances can be reopened"
+    except HTTPException as e:
+        print("Reopen rejection on unresolved grievance caught correctly:", e.detail)
+        assert e.status_code == 400
+
+    # 4. Test valid reopening
+    reopen_res = main.reopen_grievance(g1.id, schemas.GrievanceReopen(remarks="Work is incomplete, hole is opening again."), authorization=None, db=db)
+    print("Reopen response:", reopen_res)
+    assert reopen_res["message"] == "Grievance reopened successfully."
+    
+    # Reload g1 and verify
+    db.refresh(g1)
+    assert g1.status == "Reopened"
+    assert g1.reopened_count == 1
+    # Check that timeline event is logged
+    assert len(g1.timeline) > 0
+    assert g1.timeline[-1].status == "Reopened"
+    assert "Work is incomplete" in g1.timeline[-1].remarks
+    print("Reopened timeline entry verified:", g1.timeline[-1].remarks)
     
     print("\nALL BACKEND TESTS PASSED SUCCESSFULLY!")
-    
+
 if __name__ == "__main__":
     test_all()

@@ -25,30 +25,29 @@ export default function DashboardPage() {
     return user?.email ? user.email.split("@")[0] : "Citizen";
   };
 
+  const fetchGrievances = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch("http://127.0.0.1:8000/my-grievances", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGrievances(data);
+      } else {
+        setError("Failed to load your grievances");
+      }
+    } catch (err) {
+      setError("Failed to connect to backend");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading || !user) return;
-
-    const fetchGrievances = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await fetch("http://127.0.0.1:8000/my-grievances", {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setGrievances(data);
-        } else {
-          setError("Failed to load your grievances");
-        }
-      } catch (err) {
-        setError("Failed to connect to backend");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchGrievances();
   }, [user, authLoading]);
 
@@ -162,7 +161,7 @@ export default function DashboardPage() {
             ) : (
               <div className="grid gap-6">
                 {grievances.map((item) => (
-                  <GrievanceCard key={item.id} grievance={item} />
+                  <GrievanceCard key={item.id} grievance={item} onUpdate={fetchGrievances} />
                 ))}
               </div>
             )}

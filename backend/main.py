@@ -484,3 +484,135 @@ def subscribe_to_grievance(
     db.commit()
 
     return {"message": "Subscribed successfully to updates."}
+
+# SUBMIT CITIZEN FEEDBACK
+@app.post("/grievance/{id}/feedback")
+def submit_feedback(
+    id: int,
+    payload: schemas.GrievanceFeedback,
+    db: Session = Depends(get_db)
+):
+    grievance = db.query(models.Grievance).filter(models.Grievance.id == id).first()
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+
+    if grievance.status != "Resolved":
+        raise HTTPException(status_code=400, detail="Cannot submit feedback on unresolved grievances")
+
+    if payload.rating < 1 or payload.rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+
+    grievance.rating = payload.rating
+    grievance.feedback = payload.feedback
+    
+    # Add timeline log
+    timeline_event = models.GrievanceTimeline(
+        grievance_id=grievance.id,
+        status="Resolved",
+        remarks=f"Citizen submitted feedback. Rating: {payload.rating}/5. Remarks: {payload.feedback or 'No comment'}"
+    )
+    db.add(timeline_event)
+    db.commit()
+    db.refresh(grievance)
+
+    return {"message": "Feedback submitted successfully."}
+
+# REOPEN RESOLVED GRIEVANCE
+@app.post("/grievance/{id}/reopen")
+def reopen_grievance(
+    id: int,
+    payload: schemas.GrievanceReopen,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    grievance = db.query(models.Grievance).filter(models.Grievance.id == id).first()
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+
+    if grievance.status != "Resolved":
+        raise HTTPException(status_code=400, detail="Only resolved grievances can be reopened")
+
+    # Verify 7-day limit by checking the latest Resolved event in timeline
+    resolved_event = db.query(models.GrievanceTimeline).filter(
+        models.GrievanceTimeline.grievance_id == id,
+        models.GrievanceTimeline.status == "Resolved"
+    ).order_by(models.GrievanceTimeline.created_at.desc()).first()
+
+    from datetime import datetime, timedelta
+    resolved_time = resolved_event.created_at if resolved_event else grievance.created_at
+    if datetime.utcnow() - resolved_time > timedelta(days=7):
+        raise HTTPException(status_code=400, detail="Grievance cannot be reopened after 7 days of resolution")
+
+    # Update grievance
+    old_status = grievance.status
+    grievance.status = "Reopened"
+    grievance.reopened_count += 1
+    
+    user_id = None
+    if authorization:
+        try:
+            if authorization.startswith("Bearer "):
+                token = authorization.split(" ")[1]
+                payload_auth = auth.decode_token(token)
+                if payload_auth:
+                    user = db.query(models.User).filter(models.User.email == payload_auth["sub"]).first()
+                    if user:
+                        user_id = user.id
+        except Exception:
+            pass
+
+    # Create timeline entry
+    timeline_event = models.GrievanceTimeline(
+        grievance_id=grievance.id,
+        status="Reopened",
+        remarks=f"Citizen reopened grievance. Reason: {payload.remarks}",
+        action_by=user_id
+    )
+    db.add(timeline_event)
+    db.commit()
+    db.refresh(grievance)
+
+    # Notify admin/subscribers
+    owner_email = None
+    owner_phone = None
+    if grievance.user_id:
+        owner = db.query(models.User).filter(models.User.id == grievance.user_id).first()
+        if owner:
+            owner_email = owner.email
+            owner_phone = owner.phone
+
+    try:
+        from backend.app.notifications import NotificationService
+        # Notify owner/creator
+        NotificationService.send_status_update(
+            grievance=grievance,
+            old_status=old_status,
+            new_status="Reopened",
+            owner_email=owner_email,
+            owner_phone=owner_phone
+        )
+        
+        # Notify subscribers
+        for sub in grievance.subscriptions:
+            sub_email = sub.email
+            sub_phone = sub.phone
+            if sub.user_id:
+                sub_user = db.query(models.User).filter(models.User.id == sub.user_id).first()
+                if sub_user:
+                    sub_email = sub_email or sub_user.email
+                    sub_phone = sub_phone or sub_user.phone
+            
+            if sub_email:
+                NotificationService.send_email(
+                    sub_email,
+                    f"Naarad-GRS Watch Alert: Grievance #{grievance.id} is 'Reopened'",
+                    f"Grievance #{grievance.id} ({grievance.title}) you are watching has been Reopened by the citizen:\nReason: {payload.remarks}"
+                )
+            if sub_phone:
+                msg = f"Naarad-GRS Watch Alert: Grievance #{grievance.id} ({grievance.title}) has been Reopened by the citizen."
+                NotificationService.send_sms(sub_phone, msg)
+                NotificationService.send_whatsapp(sub_phone, msg)
+    except Exception:
+        pass
+
+    return {"message": "Grievance reopened successfully."}

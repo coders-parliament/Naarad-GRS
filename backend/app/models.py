@@ -32,6 +32,9 @@ class Grievance(Base):
     attachment_url = Column(String, nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    rating = Column(Integer, nullable=True)
+    feedback = Column(String, nullable=True)
+    reopened_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
