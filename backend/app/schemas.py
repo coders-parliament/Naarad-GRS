@@ -75,6 +75,9 @@ class GrievanceOut(BaseModel):
     attachment_url: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    rating: Optional[int] = None
+    feedback: Optional[str] = None
+    reopened_count: int = 0
     created_at: datetime
     timeline: List[GrievanceTimelineOut] = []
 
@@ -101,5 +104,12 @@ class DuplicateMatchOut(BaseModel):
 class SubscriptionCreate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
+
+class GrievanceFeedback(BaseModel):
+    rating: int
+    feedback: Optional[str] = None
+
+class GrievanceReopen(BaseModel):
+    remarks: str
 
 
