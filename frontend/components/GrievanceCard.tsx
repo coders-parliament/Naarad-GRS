@@ -289,20 +289,23 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
 
       {/* Feedback & Reopen Panel */}
       {grievance.status === "Resolved" && (
-        <div className="border-t border-border-custom pt-4 flex flex-col gap-4 animate-fadeIn">
+        <div className="border-t border-border-custom pt-4 flex flex-col gap-4 animate-fade-in">
           {grievance.rating ? (
             // Feedback already submitted
-            <div className="bg-bg-primary/40 rounded-xl p-4 border border-border-custom flex flex-col gap-3">
+            <div className="bg-bg-primary/40 rounded-xl p-4 border border-border-custom flex flex-col gap-3 animate-fade-in">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                   <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-1">Your Resolution Rating</p>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <svg
                         key={star}
-                        className={`w-5 h-5 ${
-                          star <= (grievance.rating || 0) ? "text-yellow-400 fill-current" : "text-text-secondary/40 fill-none"
+                        className={`w-5 h-5 transition-all duration-300 ${
+                          star <= (grievance.rating || 0) 
+                            ? "text-yellow-400 fill-current drop-shadow-[0_0_4px_rgba(250,204,21,0.3)] animate-bounce-short" 
+                            : "text-text-secondary/20 fill-none"
                         }`}
+                        style={{ animationDelay: `${star * 70}ms` }}
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -321,7 +324,7 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
                       !showReopenForm && (
                         <button
                           onClick={() => setShowReopenForm(true)}
-                          className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg transition text-xs font-semibold cursor-pointer"
+                          className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95 text-xs font-semibold cursor-pointer shadow-sm hover:shadow-red-500/10"
                         >
                           ⚠️ Reopen Grievance
                         </button>
@@ -336,7 +339,7 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
               </div>
 
               {grievance.feedback && (
-                <div className="text-xs">
+                <div className="text-xs animate-fade-in">
                   <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-1">Feedback Comments</p>
                   <p className="text-text-primary italic bg-bg-primary p-2.5 rounded-lg border border-border-custom/50">
                     "{grievance.feedback}"
@@ -346,7 +349,7 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
 
               {/* Reopen Form */}
               {showReopenForm && (
-                <div className="border-t border-border-custom pt-3 mt-1 space-y-3">
+                <div className="border-t border-border-custom pt-3 mt-1 space-y-3 animate-fade-in">
                   <div>
                     <label className="block text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-1.5">
                       Reason for Reopening
@@ -355,12 +358,12 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
                       value={reopenReason}
                       onChange={(e) => setReopenReason(e.target.value)}
                       placeholder="Please explain why the issue was not resolved satisfactorily..."
-                      className="w-full bg-bg-input border border-border-custom rounded-lg p-2.5 text-xs text-text-primary focus:border-accent-primary focus:outline-none placeholder-text-secondary/50 resize-none h-20"
+                      className="w-full bg-bg-input border border-border-custom rounded-lg p-2.5 text-xs text-text-primary focus:border-accent-primary focus:outline-none placeholder-text-secondary/50 resize-none h-20 transition-all duration-200"
                     />
                   </div>
 
                   {reopenError && (
-                    <p className="text-xs text-red-400">{reopenError}</p>
+                    <p className="text-xs text-red-400 animate-pulse-slow">{reopenError}</p>
                   )}
 
                   <div className="flex gap-2 justify-end">
@@ -370,14 +373,14 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
                         setReopenReason("");
                         setReopenError("");
                       }}
-                      className="px-3.5 py-1.5 bg-bg-secondary hover:bg-bg-input border border-border-custom text-text-secondary rounded-lg transition text-xs font-semibold cursor-pointer"
+                      className="px-3.5 py-1.5 bg-bg-secondary hover:bg-bg-input border border-border-custom text-text-secondary rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 text-xs font-semibold cursor-pointer"
                       disabled={isSubmittingReopen}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleReopen}
-                      className="px-3.5 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-md shadow-red-500/20"
                       disabled={isSubmittingReopen || !reopenReason.trim()}
                     >
                       {isSubmittingReopen ? (
@@ -395,7 +398,7 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
             </div>
           ) : (
             // Feedback needs to be submitted
-            <div className="bg-bg-primary/40 rounded-xl p-4 border border-border-custom flex flex-col gap-3">
+            <div className="bg-bg-primary/40 rounded-xl p-4 border border-border-custom flex flex-col gap-3 animate-fade-in">
               <div>
                 <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-1.5">How would you rate the resolution?</p>
                 <div className="flex gap-1.5">
@@ -408,11 +411,13 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
                         onClick={() => setSelectedRating(star)}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(null)}
-                        className="transition-transform duration-100 hover:scale-125 focus:outline-none cursor-pointer"
+                        className="transition-all duration-200 hover:scale-125 focus:outline-none cursor-pointer active:scale-90"
                       >
                         <svg
-                          className={`w-7 h-7 transition-colors ${
-                            isFilled ? "text-yellow-400 fill-current drop-shadow-[0_0_8px_rgba(250,204,21,0.2)]" : "text-text-secondary/40 fill-none"
+                          className={`w-7 h-7 transition-all duration-200 ease-out ${
+                            isFilled 
+                              ? "text-yellow-400 fill-current drop-shadow-[0_0_8px_rgba(250,204,21,0.5)] scale-110" 
+                              : "text-text-secondary/40 fill-none hover:text-yellow-300/60"
                           }`}
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
@@ -428,7 +433,7 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
               </div>
 
               {selectedRating !== null && (
-                <div className="space-y-3 animate-fadeIn">
+                <div className="space-y-3 animate-fade-in">
                   <div>
                     <label className="block text-[10px] text-text-secondary font-bold uppercase tracking-wider mb-1.5">
                       Your Comments / Feedback (Optional)
@@ -437,23 +442,23 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
                       value={feedbackText}
                       onChange={(e) => setFeedbackText(e.target.value)}
                       placeholder="What did we do well or how could we improve?"
-                      className="w-full bg-bg-input border border-border-custom rounded-lg p-2.5 text-xs text-text-primary focus:border-accent-primary focus:outline-none placeholder-text-secondary/50 resize-none h-20"
+                      className="w-full bg-bg-input border border-border-custom rounded-lg p-2.5 text-xs text-text-primary focus:border-accent-primary focus:outline-none placeholder-text-secondary/50 resize-none h-20 transition-all duration-200"
                     />
                   </div>
 
                   {feedbackError && (
-                    <p className="text-xs text-red-400">{feedbackError}</p>
+                    <p className="text-xs text-red-400 animate-pulse-slow">{feedbackError}</p>
                   )}
 
                   <div className="flex justify-between items-center">
                     {(selectedRating === 1 || selectedRating === 2) && (
-                      <span className="text-[10px] text-yellow-500 font-semibold flex items-center gap-1">
+                      <span className="text-[10px] text-yellow-500 font-semibold flex items-center gap-1 animate-pulse-slow">
                         ⚠️ Low rating allows you to reopen this issue
                       </span>
                     )}
                     <button
                       onClick={handleFeedbackSubmit}
-                      className="ml-auto px-4 py-2 bg-accent-primary hover:bg-accent-hover text-white rounded-lg transition text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-md shadow-accent-primary/10"
+                      className="ml-auto px-4 py-2 bg-accent-primary hover:bg-accent-hover text-white rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-md shadow-accent-primary/20"
                       disabled={isSubmittingFeedback}
                     >
                       {isSubmittingFeedback ? (
