@@ -52,6 +52,89 @@ def get_db():
     finally:
         db.close()
 
+def auto_escalate_grievances(db: Session):
+    from datetime import datetime
+    from backend.app.notifications import NotificationService
+
+    unresolved = db.query(models.Grievance).filter(models.Grievance.status != "Resolved").all()
+    now = datetime.utcnow()
+
+    for g in unresolved:
+        days_elapsed = (now - g.created_at).days
+        new_level = g.escalation_level
+
+        if days_elapsed >= 15:
+            new_level = max(new_level, 3)
+        elif days_elapsed >= 7:
+            new_level = max(new_level, 2)
+        else:
+            new_level = max(new_level, 1)
+
+        if new_level > g.escalation_level:
+            g.escalation_level = new_level
+            
+            level_name = {
+                2: "Level 2 (Department Head)",
+                3: "Level 3 (District Administration)"
+            }.get(new_level, "Unknown")
+
+            # Log to timeline
+            timeline_event = models.GrievanceTimeline(
+                grievance_id=g.id,
+                status="Escalated",
+                remarks=f"Grievance automatically escalated to {level_name} due to inactivity."
+            )
+            db.add(timeline_event)
+
+            # Send notifications
+            owner_email = None
+            owner_phone = None
+            if g.user_id:
+                owner = db.query(models.User).filter(models.User.id == g.user_id).first()
+                if owner:
+                    owner_email = owner.email
+                    owner_phone = owner.phone
+
+            try:
+                # Notify creator
+                target_email = owner_email or g.email
+                if target_email:
+                    NotificationService.send_email(
+                        target_email,
+                        f"Naarad-GRS Escalation: Grievance #{g.id} Escalated",
+                        f"Your Grievance #{g.id} ({g.title}) has been automatically escalated to {level_name} due to inactivity."
+                    )
+                target_phone = owner_phone or g.phone
+                if target_phone:
+                    msg = f"Naarad-GRS: Grievance #{g.id} has been escalated to {level_name}."
+                    NotificationService.send_sms(target_phone, msg)
+                    NotificationService.send_whatsapp(target_phone, msg)
+
+                # Notify subscribers
+                for sub in g.subscriptions:
+                    sub_email = sub.email
+                    sub_phone = sub.phone
+                    if sub.user_id:
+                        sub_user = db.query(models.User).filter(models.User.id == sub.user_id).first()
+                        if sub_user:
+                            sub_email = sub_email or sub_user.email
+                            sub_phone = sub_phone or sub_user.phone
+                    
+                    if sub_email:
+                        NotificationService.send_email(
+                            sub_email,
+                            f"Naarad-GRS Watch Alert: Grievance #{g.id} Escalated",
+                            f"Grievance #{g.id} ({g.title}) you are watching has been automatically escalated to {level_name} due to inactivity."
+                        )
+                    if sub_phone:
+                        msg = f"Naarad-GRS Watch Alert: Grievance #{g.id} has been escalated to {level_name}."
+                        NotificationService.send_sms(sub_phone, msg)
+                        NotificationService.send_whatsapp(sub_phone, msg)
+            except Exception as e:
+                print(f"Failed to dispatch escalation alerts: {e}")
+
+    db.commit()
+
 # REGISTER
 @app.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -217,6 +300,7 @@ def get_grievances(
     admin_user: models.User = Depends(require_role("admin")),
     db: Session = Depends(get_db)
 ):
+    auto_escalate_grievances(db)
     return db.query(models.Grievance).all()
 
 # GET USER GRIEVANCES
@@ -225,6 +309,7 @@ def get_my_grievances(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    auto_escalate_grievances(db)
     return db.query(models.Grievance).filter(models.Grievance.user_id == current_user.id).all()
 
 # UPDATE GRIEVANCE
