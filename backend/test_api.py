@@ -181,6 +181,7 @@ def test_all():
     assert len(duplicates) == 1
     assert duplicates[0].id == g1.id
     assert duplicates[0].similarity > 0.45
+    assert duplicates[0].citizen_count == 1
     print(f"Match verified: Similarity={duplicates[0].similarity:.2f}, Distance={duplicates[0].distance_meters:.2f} meters")
 
     # Test spatial filter (matching text but coordinates far away)
@@ -196,10 +197,13 @@ def test_all():
     assert len(duplicates_far) == 0  # Should be excluded because it exceeds 200m spatial threshold
 
     # Test watch subscription creation
+    assert g1.citizen_count == 1
     sub_req = schemas.SubscriptionCreate(email="subscriber@example.com", phone="+919876543210")
     sub_res = main.subscribe_to_grievance(g1.id, sub_req, authorization=None, db=db)
     print("Subscription response:", sub_res)
     assert sub_res["message"] == "Subscribed successfully to updates."
+    db.refresh(g1)
+    assert g1.citizen_count == 2
 
     # Test duplicate subscription prevention
     sub_res_dup = main.subscribe_to_grievance(g1.id, sub_req, authorization=None, db=db)

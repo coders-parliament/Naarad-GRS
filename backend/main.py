@@ -421,7 +421,8 @@ def detect_duplicates(
                     priority=g.priority,
                     status=g.status,
                     distance_meters=distance,
-                    similarity=similarity
+                    similarity=similarity,
+                    citizen_count=g.citizen_count
                 )
             )
 

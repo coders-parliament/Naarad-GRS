@@ -21,6 +21,21 @@ export default function AdminDashboard() {
   // Selected ward filter on the heatmap
   const [selectedWard, setSelectedWard] = useState<string | null>(null);
 
+  const [sortBy, setSortBy] = useState<"reports" | "date" | "priority">("reports");
+
+  const getSortedGrievances = () => {
+    let list = [...grievances];
+    if (sortBy === "reports") {
+      list.sort((a, b) => (b.citizen_count || 1) - (a.citizen_count || 1));
+    } else if (sortBy === "date") {
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (sortBy === "priority") {
+      const priorityWeight: Record<string, number> = { "High": 3, "Medium": 2, "Low": 1 };
+      list.sort((a, b) => (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0));
+    }
+    return list;
+  };
+
   const fetchAllGrievances = async () => {
     const token = localStorage.getItem("token");
     try {
@@ -501,87 +516,109 @@ export default function AdminDashboard() {
 
       {/* VIEW 2: GRIEVANCES QUEUE TABLE */}
       {activeTab === "list" && (
-        <div className="bg-bg-secondary border border-border-custom rounded-xl shadow-2xl overflow-hidden animate-fadeIn">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-bg-primary/50 text-text-secondary text-xs uppercase tracking-wider">
-                <th className="p-4 font-semibold">ID</th>
-                <th className="p-4 font-semibold">Submitter</th>
-                <th className="p-4 font-semibold">Title</th>
-                <th className="p-4 font-semibold">Category</th>
-                <th className="p-4 font-semibold">Priority</th>
-                <th className="p-4 font-semibold">Status</th>
-                <th className="p-4 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-custom">
-              {grievances.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-text-secondary text-sm">
-                    No grievances found in database.
-                  </td>
+        <div className="space-y-4 animate-fadeIn">
+          <div className="flex justify-between items-center bg-bg-secondary border border-border-custom rounded-xl p-4 shadow-lg">
+            <span className="text-sm font-semibold text-text-secondary">
+              Order grievances by:
+            </span>
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-bg-input border border-border-custom text-xs text-text-primary px-3 py-1.5 rounded-lg outline-none focus:border-accent-primary transition cursor-pointer font-semibold"
+              >
+                <option value="reports">👥 Citizen Reports (Highest First)</option>
+                <option value="date">📅 Date Raised (Newest First)</option>
+                <option value="priority">⚠️ Priority (High to Low)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-bg-secondary border border-border-custom rounded-xl shadow-2xl overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-bg-primary/50 text-text-secondary text-xs uppercase tracking-wider">
+                  <th className="p-4 font-semibold">ID</th>
+                  <th className="p-4 font-semibold">Submitter</th>
+                  <th className="p-4 font-semibold">Title</th>
+                  <th className="p-4 font-semibold">Category</th>
+                  <th className="p-4 font-semibold">Reports</th>
+                  <th className="p-4 font-semibold">Priority</th>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-semibold">Actions</th>
                 </tr>
-              ) : (
-                grievances.map((g) => (
-                  <tr key={g.id} className="hover:bg-bg-input/50 transition text-sm">
-                    <td className="p-4 font-mono text-accent-primary font-bold">#{g.id}</td>
-                    <td className="p-4">
-                      {g.user_id ? (
-                        <div>
-                          <p className="text-text-primary font-medium">{g.email}</p>
-                          <span className="text-xs text-accent-primary font-semibold">Registered Citizen</span>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-text-primary font-medium">{g.name || "Anonymous"}</p>
-                          <p className="text-xs text-text-secondary">{g.email || "No contact email"}</p>
-                          {g.phone && <p className="text-[10px] text-text-secondary">📞 {g.phone}</p>}
-                          <span className="text-[10px] text-text-secondary font-semibold italic bg-bg-input px-1.5 py-0.5 rounded border border-border-custom mt-1 inline-block">
-                            Guest Submission
-                          </span>
-                        </div>
-                      )}
+              </thead>
+              <tbody className="divide-y divide-border-custom">
+                {grievances.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-text-secondary text-sm">
+                      No grievances found in database.
                     </td>
-                    <td className="p-4 font-medium text-text-primary max-w-xs truncate" title={g.description}>
-                      <p className="font-semibold">{g.title}</p>
-                      <p className="text-xs text-text-secondary truncate mt-0.5">{g.description}</p>
-                      {g.attachment_url && (
-                        <a 
-                          href={g.attachment_url} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className="inline-block text-[10px] text-accent-primary hover:underline font-semibold mt-1"
-                        >
-                          📎 View Attachment
-                        </a>
-                      )}
-                      {g.latitude && g.longitude && (
-                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${g.latitude},${g.longitude}`} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className={`inline-block text-[10px] text-green-400 hover:underline font-semibold mt-1 ${g.attachment_url ? 'ml-3' : ''}`}
-                        >
-                          📍 GPS Location
-                        </a>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <span className="px-2.5 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-xs font-semibold">
-                        {g.category}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        g.priority === "High" 
-                          ? "bg-red-500/20 text-red-400 border border-red-500/30" 
-                          : g.priority === "Low" 
-                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
-                          : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                      }`}>
-                        {g.priority}
-                      </span>
-                    </td>
+                  </tr>
+                ) : (
+                  getSortedGrievances().map((g) => (
+                    <tr key={g.id} className="hover:bg-bg-input/50 transition text-sm">
+                      <td className="p-4 font-mono text-accent-primary font-bold">#{g.id}</td>
+                      <td className="p-4">
+                        {g.user_id ? (
+                          <div>
+                            <p className="text-text-primary font-medium">{g.email}</p>
+                            <span className="text-xs text-accent-primary font-semibold">Registered Citizen</span>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-text-primary font-medium">{g.name || "Anonymous"}</p>
+                            <p className="text-xs text-text-secondary">{g.email || "No contact email"}</p>
+                            {g.phone && <p className="text-[10px] text-text-secondary">📞 {g.phone}</p>}
+                            <span className="text-[10px] text-text-secondary font-semibold italic bg-bg-input px-1.5 py-0.5 rounded border border-border-custom mt-1 inline-block">
+                              Guest Submission
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4 font-medium text-text-primary max-w-xs truncate" title={g.description}>
+                        <p className="font-semibold">{g.title}</p>
+                        <p className="text-xs text-text-secondary truncate mt-0.5">{g.description}</p>
+                        {g.attachment_url && (
+                          <a 
+                            href={g.attachment_url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="inline-block text-[10px] text-accent-primary hover:underline font-semibold mt-1"
+                          >
+                            📎 View Attachment
+                          </a>
+                        )}
+                        {g.latitude && g.longitude && (
+                          <a 
+                            href={`https://www.google.com/maps/search/?api=1&query=${g.latitude},${g.longitude}`} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className={`inline-block text-[10px] text-green-400 hover:underline font-semibold mt-1 ${g.attachment_url ? 'ml-3' : ''}`}
+                          >
+                            📍 GPS Location
+                          </a>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <span className="px-2.5 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-xs font-semibold">
+                          {g.category}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center font-bold text-yellow-500 font-mono">
+                        👥 {g.citizen_count || 1}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          g.priority === "High" 
+                            ? "bg-red-500/20 text-red-400 border border-red-500/30" 
+                            : g.priority === "Low" 
+                            ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
+                            : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                        }`}>
+                          {g.priority}
+                        </span>
+                      </td>
                     <td className="p-4">
                       <StatusBadge status={g.status} />
                     </td>
@@ -603,6 +640,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
+      </div>
       )}
 
       {/* Admin Remarks Modal */}
