@@ -259,6 +259,46 @@ def test_all():
     assert g1.timeline[-1].status == "Reopened"
     assert "Work is incomplete" in g1.timeline[-1].remarks
     print("Reopened timeline entry verified:", g1.timeline[-1].remarks)
+
+    print("\n--- 11. Testing Automatic Escalation Engine ---")
+    # Verify default escalation level is 1
+    assert g2.escalation_level == 1
+
+    # Mock g2's created_at to 8 days ago to trigger Level 2 escalation
+    from datetime import datetime, timedelta
+    g2.created_at = datetime.utcnow() - timedelta(days=8)
+    db.commit()
+
+    main.auto_escalate_grievances(db)
+    db.refresh(g2)
+    print("Escalation level after 8 days:", g2.escalation_level)
+    assert g2.escalation_level == 2
+    # Verify timeline entry
+    assert g2.timeline[-1].status == "Escalated"
+    assert "Level 2 (Department Head)" in g2.timeline[-1].remarks
+
+    # Mock g2's created_at to 16 days ago to trigger Level 3 escalation
+    g2.created_at = datetime.utcnow() - timedelta(days=16)
+    db.commit()
+
+    main.auto_escalate_grievances(db)
+    db.refresh(g2)
+    print("Escalation level after 16 days:", g2.escalation_level)
+    assert g2.escalation_level == 3
+    # Verify timeline entry
+    assert g2.timeline[-1].status == "Escalated"
+    assert "Level 3 (District Administration)" in g2.timeline[-1].remarks
+
+    # Test standalone run_escalation CLI script executes
+    import subprocess
+    cli_res = subprocess.run(
+        [sys.executable, "backend/scripts/run_escalation.py"],
+        capture_output=True,
+        text=True
+    )
+    print("CLI script output:", cli_res.stdout)
+    assert cli_res.returncode == 0
+    assert "completed successfully" in cli_res.stdout
     
     print("\nALL BACKEND TESTS PASSED SUCCESSFULLY!")
 

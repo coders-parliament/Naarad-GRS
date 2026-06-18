@@ -24,6 +24,7 @@ type Props = {
     feedback?: string | null;
     reopened_count?: number;
     citizen_count?: number;
+    escalation_level?: number;
     timeline?: TimelineEvent[];
   };
   onUpdate?: () => void;
@@ -143,8 +144,30 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
     activeStep = 3; // "In Progress" or similar
   }
 
-  // Get officer details based on category
-  const getOfficerDetails = (cat: string) => {
+  // Get officer details based on category and escalation level
+  const getOfficerDetails = (cat: string, escLevel: number = 1) => {
+    if (escLevel === 3) {
+      return { 
+        name: "Dr. Amit Sharma, IAS", 
+        role: "District Collector & Magistrate, District Administration", 
+        phone: "+91 98234 99001" 
+      };
+    }
+
+    if (escLevel === 2) {
+      switch (cat) {
+        case "Electricity":
+          return { name: "Shri Vinayak Rao", role: "Superintending Engineer, State Electricity Board", phone: "+91 98234 55667" };
+        case "Water":
+          return { name: "Shri Ramesh Deshpande", role: "Chief Engineer, Municipal Water Works", phone: "+91 98234 22334" };
+        case "Road":
+          return { name: "Shri Nitin Gadkari Jr.", role: "Director of Urban Road Infrastructure", phone: "+91 98234 66778" };
+        default:
+          return { name: "Shri Prakash Mehta", role: "Joint Commissioner, Public Grievance Dept", phone: "+91 98234 88990" };
+      }
+    }
+
+    // Default Level 1
     switch (cat) {
       case "Electricity":
         return { name: "Er. Rajesh Patel", role: "Executive Engineer, Power Distribution Dept", phone: "+91 98234 56789" };
@@ -157,7 +180,7 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
     }
   };
 
-  const officer = getOfficerDetails(grievance.category);
+  const officer = getOfficerDetails(grievance.category, grievance.escalation_level);
 
   return (
     <div className="border border-border-custom rounded-xl p-6 shadow-lg bg-bg-secondary hover:border-accent-primary transition duration-300 flex flex-col gap-6">
@@ -204,6 +227,22 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
           }`}>
             {grievance.priority} Priority
           </span>
+
+          {grievance.status !== "Resolved" && (
+            <span className={`px-2.5 py-0.5 rounded text-xs font-semibold ${
+              grievance.escalation_level === 3
+                ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse-slow"
+                : grievance.escalation_level === 2
+                ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                : "bg-green-500/20 text-green-400 border border-green-500/30"
+            }`}>
+              {grievance.escalation_level === 3
+                ? "🚨 Level 3 - District Admin"
+                : grievance.escalation_level === 2
+                ? "⚠️ Level 2 - Dept Head"
+                : "🟢 Level 1 - Municipal Officer"}
+            </span>
+          )}
         </div>
       </div>
 

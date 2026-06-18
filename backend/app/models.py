@@ -35,6 +35,7 @@ class Grievance(Base):
     rating = Column(Integer, nullable=True)
     feedback = Column(String, nullable=True)
     reopened_count = Column(Integer, default=0)
+    escalation_level = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

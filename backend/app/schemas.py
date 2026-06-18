@@ -78,6 +78,7 @@ class GrievanceOut(BaseModel):
     rating: Optional[int] = None
     feedback: Optional[str] = None
     reopened_count: int = 0
+    escalation_level: int = 1
     citizen_count: int = 1
     created_at: datetime
     timeline: List[GrievanceTimelineOut] = []
