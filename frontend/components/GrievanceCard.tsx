@@ -23,6 +23,7 @@ type Props = {
     rating?: number | null;
     feedback?: string | null;
     reopened_count?: number;
+    citizen_count?: number;
     timeline?: TimelineEvent[];
   };
   onUpdate?: () => void;
@@ -170,7 +171,7 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
             </h2>
             <span className="text-sm font-mono text-text-secondary">#{grievance.id}</span>
           </div>
-          <div className="flex gap-2 items-center mt-2">
+          <div className="flex gap-2 items-center mt-2 flex-wrap">
             <span className="px-3 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-xs font-semibold">
               {grievance.category}
             </span>
@@ -181,6 +182,11 @@ export default function GrievanceCard({ grievance, onUpdate }: Props) {
             ) : (
               <span className="text-xs text-text-secondary italic bg-bg-input px-2.5 py-0.5 rounded border border-border-custom">
                 🕵️‍♂️ Anonymous Submission
+              </span>
+            )}
+            {grievance.citizen_count && grievance.citizen_count > 1 && (
+              <span className="text-xs text-yellow-500 bg-yellow-500/10 px-2.5 py-0.5 rounded border border-yellow-500/20 font-semibold flex items-center gap-1.5 animate-pulse-slow">
+                👥 {grievance.citizen_count} citizens have reported this problem
               </span>
             )}
           </div>

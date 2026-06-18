@@ -41,6 +41,10 @@ class Grievance(Base):
     timeline = relationship("GrievanceTimeline", back_populates="grievance", cascade="all, delete-orphan", order_by="GrievanceTimeline.created_at.asc()")
     subscriptions = relationship("GrievanceSubscription", back_populates="grievance", cascade="all, delete-orphan")
 
+    @property
+    def citizen_count(self) -> int:
+        return 1 + len(self.subscriptions)
+
 class GrievanceTimeline(Base):
     __tablename__ = "grievance_timelines"
 

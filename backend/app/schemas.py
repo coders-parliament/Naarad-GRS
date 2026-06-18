@@ -78,6 +78,7 @@ class GrievanceOut(BaseModel):
     rating: Optional[int] = None
     feedback: Optional[str] = None
     reopened_count: int = 0
+    citizen_count: int = 1
     created_at: datetime
     timeline: List[GrievanceTimelineOut] = []
 
@@ -100,6 +101,7 @@ class DuplicateMatchOut(BaseModel):
     status: str
     distance_meters: Optional[float] = None
     similarity: float
+    citizen_count: int = 1
 
 class SubscriptionCreate(BaseModel):
     email: Optional[str] = None

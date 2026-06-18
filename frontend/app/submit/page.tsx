@@ -812,6 +812,9 @@ export default function SubmitPage() {
                           <p className="text-[10px] text-text-secondary mt-0.5">
                             Category: {match.category} | Priority: {match.priority} | Status: <span className="text-accent-primary font-semibold">{match.status}</span>
                           </p>
+                          <div className="mt-1 text-xs font-semibold text-yellow-500 flex items-center gap-1">
+                            👥 {match.citizen_count || 1} {(match.citizen_count || 1) === 1 ? 'citizen has' : 'citizens have'} reported this problem.
+                          </div>
                         </div>
                         {match.distance_meters !== null && (
                           <span className="text-[10px] bg-green-500/10 text-green-400 font-semibold px-2 py-0.5 rounded border border-green-500/20">
